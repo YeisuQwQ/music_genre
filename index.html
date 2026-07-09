@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子音乐分类体系 · 静态思维导图</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+#mindmap { flex: 1; height: 100vh; background: #1a1a2e; }
+#panel { width: 420px; height: 100vh; background: #16213e; border-left: 1px solid #333; overflow-y: auto; padding: 20px; color: #ddd; display: flex; flex-direction: column; }
+#panel h2 { color: #74c0fc; font-size: 20px; margin-bottom: 4px; }
+#panel .chapter-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-bottom: 12px; }
+#panel .desc { font-size: 13px; line-height: 1.8; color: #bbb; flex: 1; overflow-y: auto; padding-right: 8px; }
+#panel .desc::-webkit-scrollbar { width: 4px; }
+#panel .desc::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+#panel .rel-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #333; }
+#panel .rel-section h4 { font-size: 13px; margin-bottom: 6px; }
+#panel .rel-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; margin: 2px 4px 2px 0; font-size: 11px; }
+#panel .rel-tag.up { background: #ff6b6b22; border: 1px solid #ff6b6b88; color: #ff6b6b; }
+#panel .rel-tag.down { background: #51cf6622; border: 1px solid #51cf6688; color: #51cf66; }
+#panel .rel-tag.aka { background: #ffd43b22; border: 1px solid #ffd43b88; color: #ffd43b; }
+#panel .placeholder { color: #555; text-align: center; margin-top: 80px; font-size: 14px; }
+.topbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 80%; }
+.topbar button { padding: 4px 10px; border: 1px solid #444; border-radius: 12px; background: #1a1a2ecc; color: #999; cursor: pointer; font-size: 11px; }
+.topbar button:hover { color: #fff; border-color: #888; }
+.topbar button.active { background: #2d4a7a; border-color: #74c0fc; color: #fff; }
+.topbar input { padding: 4px 12px; border-radius: 12px; border: 1px solid #555; background: #1a1a2ecc; color: #fff; font-size: 11px; width: 160px; outline: none; }
+.legend-fixed { position: fixed; bottom: 16px; left: 16px; background: #16213ecc; padding: 8px 12px; border-radius: 8px; font-size: 11px; color: #aaa; z-index: 10; }
+.legend-fixed span { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="topbar" id="topbar">
+  <input type="text" id="search" placeholder="🔍 搜索曲风..." onkeyup="searchNode()">
+  <button onclick="resetAll()">显示全部</button>
+</div>
+<div class="legend-fixed">
+  <span style="background:#ff6b6b"></span> 上位 &nbsp;
+  <span style="background:#51cf66"></span> 下位
+</div>
+<div id="mindmap"></div>
+<div id="panel">
+  <div class="placeholder">👈 点击左侧节点<br>查看曲风详细介绍</div>
+</div>
+
+<script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+<script>
+// ===== COLOR MAP =====
+const chapterColors = {
+  "House": "#ff922b", "Techno": "#4dabf7", "Trance": "#20c997",
+  "Breakbeat": "#f06595", "UK Bass": "#845ef7", "US Bass": "#ff6b6b",
+  "HDM": "#ffd43b", "Hip-Hop/Trap/Future Bass": "#69db7c", "Disco/Hi-NRG": "#da77f2",
+  "Ambient": "#63e6be", "Indie": "#ffe066", "Post-Internet": "#ff8787",
+  "Industrial Music": "#adb5bd", "Fusion/Ethnic": "#94d82d"
+};
+
+// ===== DESCRIPTION DATABASE =====
+const descDB = {
+
+"Chicago House": { chapter: "House", desc: "用于形容20世纪80年代左右在美国芝加哥诞生的早期House音乐。'House'一词取自芝加哥知名舞厅Warehouse。Disco、Funk、Rock、Hiphop这些早期音乐都或多或少影响了House的诞生。Chicago House代表着House最基本的特征：4/4拍、厚实的Bassline、各种采样的运用，为许多社会边缘群体提供了自由舞蹈的机会。" },
+"Piano House": { chapter: "House", desc: "Chicago House衍生子类，兴盛期在90年代左右，旋律由钢琴和弦主导。'Piano'决定了New School式的创作理念，'House'则指Chicago House/美式Deep House的音乐形式。90年代初对舞曲爱好者产生了深远影响，2010年代中期在英国迎来复兴。" },
+"Acid House": { chapter: "House", desc: "同样发源于美国芝加哥，标志性尖锐音色来源于Roland TB-303合成器。1980年代蔓延到英国和欧洲大陆后受到年轻人和Club的青睐。'Second Summer of Love'事件将其热度推向高峰，黄色笑脸成为英国Rave爱好者形容Acid House的标志。" },
+"Hip House": { chapter: "House", desc: "A.K.A. House Rap。融合了说唱、嘻哈元素的House，发源于美国和英国，在Acid House派对场景中开始流行。21世纪后更为现代化、流行化的Hip House取得了商业上的成功，David Guetta、黑眼豆豆的早期作品就有几首Hip House。" },
+"Detroit House": { chapter: "House", desc: "在底特律独立发展起来的House。受极简主义影响，没有受到过多的Disco声音影响，摆脱了人声限制，派生出了Hi-Tech Soul音乐（即后续的Detroit Techno）。保留有极强的工业感声音，为早期Tech House奠定了基础。" },
+"UK House": { chapter: "House", desc: "1987年芝加哥DJ Steve 'Silk' Hurley的'Jack Your Body'拿下英国单曲榜第一，随后英国产生了自己的House音乐，加入英国特有的切分钢琴和碎拍，具有更好的旋律和结构，编曲更简洁，曲调更激昂活泼。1988年Second Summer of Love引爆了Rave文化。" },
+"Euro House": { chapter: "House", desc: "发展于80年代末的欧洲，与Eurodance平行发展，极具欧洲特色。BPM比Eurodance慢一些。90年代，Cappella和2 Brothers on the 4th Floor等乐队致力于Euro House在欧洲流行市场的普及。" },
+"Italo House": { chapter: "House", desc: "发源于意大利的House音乐，与经典Chicago House不同的是融合了Italo Disco，加入更多钢琴和弦元素，听感更加悦耳。1990s后期在英国等各种欧洲榜单上非常流行。" },
+"Kwaito": { chapter: "House", desc: "起源于南非荷兰语'kwaai'，20世纪90年代兴起于南非约翰内斯堡，与政治解放、反种族隔离浪潮息息相关。融合了不少Hiphop元素，往往比一般House音乐要慢，具有非洲民族乐器的采样，唱词方式相当特别。" },
+"Gqom": { chapter: "House", desc: "2010年代初兴起于南非德班，由DJ Lag、Rudeboyz等人开创。典型特征是极简、原始和重复的编排，没那么'4/4拍'，主题较为抒情。2021年南非音乐奖专门设置了'Gqom'奖。" },
+"Amapiano": { chapter: "House", desc: "'ama'在祖鲁语中表示复数，意为'钢琴'。2012年在南非兴起，特点是空气感的pad、冲击力强的Basslines、高亢的钢琴旋律，更加强调氛围感，听感相当积极向上。2022年Beatport宣布其为独立风格分类。" },
+"Tribal House": { chapter: "House", desc: "与世界民族音乐相结合的House分支。强调民族或土著音乐打击乐元素（通常是康加鼓或衍生合成乐器），听起来容易联想到非洲和南美洲各部落的民族音乐，是House音乐的本土化体现。" },
+"Balearic Beat": { chapter: "House", desc: "A.K.A. Balearic House、Ibiza House。1980s度假胜地伊比萨岛的DJ将海滨、阳光、Chillout元素融合进音乐。极具地域化特色，融合Jazz、Italo-Disco和西班牙本土音乐。" },
+"Soulful House": { chapter: "House", desc: "受爵士乐、灵魂乐影响相当大的流派，通常伴随钢琴、吉他、贝斯等乐器，听感十分放松。常以典型爵士管乐器独奏为特色，场景功能性很强。有时被认为是Nu-Jazz和Lounge等流派的舞曲版本。" },
+"Ambient House": { chapter: "House", desc: "1990年代初期在英国发展的流派，将House的44拍与Ambient的'冷静、舒缓'氛围结合，鼓组更偏向原声质感，具有'飘起来'的特殊听感和静谧氛围。为Ambient Techno、Ambient Dub和Psybient的发展提供了基础。" },
+"Micro House": { chapter: "House", desc: "A.K.A. Minimal House、Buftech。受Minimalism和90年代Techno强烈影响的House子分支。采样极短的人声、乐器、静电、日常噪音等，时常与Ambient结合，具有科技美和极简美。" },
+"Disco House": { chapter: "House", desc: "Disco与House的融合体，是Disco在进化成House过程中诞生的中间体，既保有Disco的声音特色又遵循House的节奏和律动。近年来涌现的新'Disco House'属于Disco/Nu-Disco作用于主流House音乐的结果。" },
+"Funky House": { chapter: "House", desc: "受Funk乐影响较大的流派，Disco弦乐的使用很常见。相对于Disco House来说更加Solid，属于House的一种分支而非单纯的标签。大量使用Funk和Disco元素，速度一般保持在128BPM。" },
+"Nu-Disco": { chapter: "House", desc: "诞生于21世纪初期，脱胎于French House。七八十年代的Disco使用大量合成器换上现代化制作手法，House味道更多于原本的Disco，是House反作用于Disco的新产物。" },
+"French House": { chapter: "House", desc: "A.K.A. Filter House、Tekfunk。由法国音乐家在90年代制作，与'French Touch'运动息息相关。特点是Bassline比较厚重、潮流，人声相当舒缓、抒情。Daft Punk、Cassius等人是公认先驱。" },
+"Garage House": { chapter: "House", desc: "A.K.A. New York House、US Garage。最初由DJ Larry Levan在纽约Paradise Garage Club发展出来，融合Gospel、Dub、R&B和Disco音乐。更多具有黑人Gospel福音音乐的钢琴即兴演奏与灵魂女声采样，舞池性和娱乐性很强。90年代在英国演化为UK Garage。" },
+"Ballroom": { chapter: "House", desc: "A.K.A. Vogue Beats。Ballroom Culture的产物，起源于纽约市的舞厅，非裔美国人和拉丁裔地下LGBTQ+团体。节奏很强硬、碎拍化、响亮，有标志性的'哐哐'声采样。伴随Vogue Dance（折手舞）场景逐渐成型。" },
+"Baltimore Club": { chapter: "House", desc: "发源于美国马里兰州巴尔的摩的俱乐部。融合了Breakbeat元素，通常有嘻哈元素（人声往往会切碎、循环重复处理）。与舞蹈息息相关，广受当地非裔美国年轻人欢迎，后来传播到英国Rave场景。" },
+"Jersey Club": { chapter: "House", desc: "Baltimore Club传播到新泽西州后的本土化产物。剔除了Baltimore Club的粗犷、原始和暴力元素，取而代之的是平稳得多的人声和基调。" },
+"Ghetto House": { chapter: "House", desc: "A.K.A. Booty House。20世纪80年代后期在芝加哥南部贫民窟区发展出来，比Chicago House粗犷得多，不复杂的鼓点，与当地俚语和风俗相融合，有时带有露骨歌词。" },
+"Footwork": { chapter: "House", desc: "Ghetto House的更快变体，通常在160bpm左右。融合了更多的嘻哈元素，倾向于Bass的展示。芝加哥的舞者们常播放这种BGM进行即兴斗舞比赛，形成了以'Chicago juke'为基础的社区文化。" },
+"Tech House": { chapter: "House", desc: "早在90年代就已出现，算是House和Techno的折中尝试。节奏和结构基本保持了House的特点，干脆而又弹跳感十足，通常比Techno略慢，Bassline低音混响感也比传统House浓重。已是当今非常流行的舞曲流派。" },
+"Deep House": { chapter: "House", desc: "发源于1980s的芝加哥，由Marshall Jefferson和Larry Heard共同开创。与强调'舞池性'的一般House不同，Deep House崇尚听感的深度，更适合细品而非舞蹈，听感与爵士和灵魂乐有共通之处。祛除杂念，让灵魂接受音乐的洗礼。" },
+"Afro House": { chapter: "House", desc: "起源于南非，融合了Deep House和南部非洲音乐的元素，听感很放松，略有催眠的效果。Black Coffee被认为是该流派的有力推动者。Amapiano的出现让这一流派重新得到市场欢迎。" },
+"Tropical House": { chapter: "House", desc: "A.K.A. Trop House、Summer House。有热带特有的岛屿、海滩风情，听上去积极、放松、休闲。BPM在100-115BPM。常常采样热带乐器如Steel drum、马林巴、吉他、萨克斯。Kygo和Robin Schulz将这一曲风带入主流EDM视野。" },
+"Future House": { chapter: "House", desc: "制作人Tchami于2013年提出这一名词。有着金属且很有弹性质感的Bassline，旋律较为柔和。广受主流电音界Raver欢迎。近年来不少制作人开始尝试将这些元素融入别的曲风如Tech House。" },
+"Bass House": { chapter: "House", desc: "出现在2010s，是House音乐与Bass音乐的融合。融合Deep House、Riddim Dubstep和UK Bass的元素，BPM通常在128左右。Jauz、Valentino Khan等是代表制作人。" },
+"Progressive House": { chapter: "House", desc: "A.K.A. Prog House。始于1990年代的英国，深受Trance音乐影响，比较注重旋律和乐曲的渐进式编排，强调情绪与氛围逐步推进和堆叠，节奏大致在120到134bpm左右。元老级DJ Sasha为推动该曲风作出卓越贡献。" },
+"EDM Progressive House": { chapter: "House", desc: "A.K.A. Festival Progressive House、Swedish House。在21世纪10年代EDM浪潮背景下，瑞典浩室黑手党、Avicii和Calvin Harris等推动了这一风格在全球的流行。有经典EDM架构，更短的时长，冲击感强得多的音色，朗朗上口的旋律。" },
+"Electro House": { chapter: "House", desc: "特点是其低音部分的处理，通常以嗡嗡作响的Bassline形式出现，或用锯齿波和失真创造的Bassline。早期Electro House电气味十足。Benny Benassi的'Satisfaction'为这种风格打下了基础。" },
+"Bigroom House": { chapter: "House", desc: "毫无疑问的舞池炸弹，拥有大空间感的Drum Kick和巨大混响的Lead，旋律往往比较简单，辨识度高。在2015-2019年左右盛行于各大电音节。W&W、Blasterjaxx等是代表制作人。" },
+"Melbourne Bounce": { chapter: "House", desc: "起源于2010年左右的澳大利亚墨尔本，各种不同曲风如Mákina、Acid House、Hardcore Techno以及EDM浪潮交汇的产物。特点是弹性十足的Drop，BPM 128-150。Will Sparks、TJR等为登上主流舞台做出贡献。" },
+"Moombahton": { chapter: "House", desc: "受到雷鬼影响的电子乐。最初由DJ Dave Nada将Afrojack的混音从128 BPM放慢到108 BPM并融入雷鬼元素而创造。强调舞曲性，极具拉丁风情。Major Lazer和DJ Snake的《Lean On》就是典型。" },
+"Hard Bass": { chapter: "House", desc: "A.K.A. Russian Hardbass。发源于1990年代晚期的俄罗斯，BPM 150-175，Drop辨识度很高，拥有Powerstomp般极重的Kick和Hardstyle轰脸的失真Bass。已成为Gopnik亚文化的核心标志性印象。2015年后以'梗'的形式在互联网广泛传播。" },
+"Future Rave": { chapter: "House", desc: "David Guetta和MORTEN于2020年提出的概念，通常以复古质感并带有高混响的锯齿波音色为Lead，具有空旷的空间感，并含有显著的Electro声音元素。" },
+"Stutter House": { chapter: "House", desc: "采用DAW插件实现'切片式'Drop或Vocal，搭配现代化House音乐。随着Fred again..的爆火和The Chainsmokers等制作人的推广，这一名词开始流行起来。" },
+
+"Detroit Techno": { chapter: "Techno", desc: "A.K.A. Hi-Tech Soul。诞生于1980s中期，源于美国底特律最初的声音。Juan Atkins、Kevin Saunderson、Derrick May等中产阶级黑人DJ借鉴了Chicago House、Kraftwerk和YMO的作品，开创出一种全新的声音——通过TR-808和TR-909强调更黑暗、更机械重复的一面。这就是早期的Techno。" },
+"Bleep Techno": { chapter: "Techno", desc: "20世纪80年代末至90年代初在英国短暂兴起的Techno分支。特点为干脆利落的节奏、厚重的Sub-bass和标志性的'哔哔（Bleep）'声音，营造出极为科幻迷乱的氛围。被认为是现代英国电子音乐的重要源头之一。" },
+"Belgian Techno": { chapter: "Techno", desc: "A.K.A. Rave Techno、Belgian Hardcore。将New Beat、Bleep Techno、Post-Industrial、EBM、Acid House杂糅在一起的产物。BPM在120~140之间，快速且残酷的节拍被形容为'世界末日般的夸张'，戏剧性的管弦乐和充满威胁性的合成器音色是其特征。" },
+"Acid Techno": { chapter: "Techno", desc: "从Acid House场景中发展而来，起源于英国。90年代初Techno制作人将Roland TB-303的音色运用到了Techno中，产生了更有活力的声音。打响了Techno的第二波浪潮，为Ambient Techno等的诞生奠定了基础。" },
+"Ambient Techno": { chapter: "Techno", desc: "最早出现于20世纪80年代末至90年代初，将Techno机械重复的节拍与氛围音乐的氛围和质感相融合，是较慢、较松弛的Techno形式。更适合在家中聆听而非俱乐部播放。1992年Warp Records发行合辑《Artificial Intelligence》巩固了这一英国场景。" },
+"Minimal Techno": { chapter: "Techno", desc: "1990s初，Robert Hood、Richie Hawtin、Daniel Bell等制作人反对所有电子音乐节奏越来越快的浪潮，更加注重音乐原本的严肃性和艺术性，融入极简主义。'只有必不可少的东西，只有必要的东西才能让人们动起来。'" },
+"Dub Techno": { chapter: "Techno", desc: "融合了Minimal Techno的元素和Dub的特点，使用回声、混响、相位器效果等表达深邃的氛围和丰富的质感。Basic Channel通常被认为是这一流派的先驱，帮助确立了这一流派。" },
+"Industrial Techno": { chapter: "Techno", desc: "更'硬'、更黑暗的Techno音乐风格，发源于20世纪90年代。强调类似于工厂、机械的声音，融合了早期Industrial音乐中凄凉、嘈杂的声音和美学的影响，也经常融入Minimal Techno循环结构和Dub Techno回响效果的元素。" },
+"Hard Techno": { chapter: "Techno", desc: "Techno的一种形式，1990s末在Schranz运动的推动下诞生，其特点是突出的Hard Kick，BPM通常在140-160左右，声音通常失真，具有很强的侵略性。起源可以追溯到90年代早期的Acid Techno和Belgian Techno场景。" },
+"Schranz": { chapter: "Techno", desc: "诞生于1990s末的德国，Chris Liebing提出了这一名词。BPM很快，基本处于150~170之间，不是很强调旋律，结构直接并简约。标志性音色包括失真的909底鼓和有'嗖嗖'声的Cymbal。是Hard Techno主力军，侵略性强，充满暗黑元素。" },
+"Melodic Techno": { chapter: "Techno", desc: "Techno的一个子流派，深受Trance音乐的影响，但节奏较慢（120-125BPM），打击乐比较柔和。特点是用干净而细腻的Pluck音色写小调琶音旋律，带有大混响和立体声延迟，灵感来自Progressive House和Progressive Trance。Tale of Us和Mind Against是先驱者。" },
+"Peak Time Techno": { chapter: "Techno", desc: "2010年代中期诞生的Techno子分支，脱离于欧洲Minimal Techno/Tech House场景。特点是更硬、更高能量的Techno声音，更面向现代与大众，是传统Techno向EDM舞台转型的标志性产物。Charlotte de Witte、Spektre等是代表。" },
+"EDM Techno": { chapter: "Techno", desc: "疫情大流行时期出现的标签，形容将Bigroom等主流EDM融合进入Techno架构。十分具有舞池性。随着Will Sparks、Maddix的推广以及Hardwell复出后所推出的一系列作品，这个标签知名度已越来越高。" },
+
+"Classic Trance": { chapter: "Trance", desc: "早期的Trance被认为是融合了House和Techno的一种更加旋律化的分支，在发展中又吸收了Pop、Chillout、氛围、古典、电影配乐等多种音乐元素。BPM通常在128至140之间，4/4拍，注重旋律、和声来营造长时间的出神氛围。90年代末期Trance迎来全盛时代。" },
+"Acid Trance": { chapter: "Trance", desc: "第一波Trance浪潮的最初分支之一，20世纪90年代初在欧洲大受欢迎。保持了Acid House的基调和迷幻元素，与Trance不断发展的结构相结合。303 Bass的调制是其重要元素，赋予了这一流派自己的音色、旋律与氛围。" },
+"Goa Trance": { chapter: "Trance", desc: "发源于1980s末，融入印度Goa岛上的Industrial乃至New Beat元素的Trance。BPM在130-150左右，长度很长（8-12分钟）。初衷是通过催眠、脉动的旋律和节奏帮助舞者体验集体身体超越状态，类似于古代萨满教的舞蹈仪式。" },
+"Psy Trance": { chapter: "Trance", desc: "由Goa Trance发展而来。速度往往比其他形式的Trance或Techno快，一般从135至150BPM。特点是对节奏的编排，连续反复冲击的Bassline和高节奏循环乐段的层叠旋律，在情绪、节奏和形式上具有多样性。在全球范围内广泛流传。" },
+"Full-On": { chapter: "Trance", desc: "A.K.A. Full-On Psytrance、Morning Trance。本世纪初首先起源于以色列的Psytrance风格。最容易辨认的元素是Rolling Bassline，在4/4鼓点每次敲击之间插入两三个Bass音符。BPM约145-150。2002-2009年期间被认为是Full-on的'黄金时期'。" },
+"Dark Psytrance": { chapter: "Trance", desc: "A.K.A. Darkpsy、Horrortrance。Psytrance中更黑暗、更快速、更受工业音乐影响的子流派，以隐晦、深刻和末世感为特点，辅以黑夜/幽灵/邪恶等可怖采样元素。BPM常在150左右，有时甚至结合Glitch元素。" },
+"Hi-Tech": { chapter: "Trance", desc: "一种Psytrance风格，深受Dark Psytrance、Psycore和Full-On影响。速度从170BPM到230BPM不等，是速度最快的Psy Trance风格之一。合成器声音给人带来科幻、未来、外星氛围的感觉。'Hi-Tech'由俄罗斯的Osom（Psykovsky & Kindzadza）发明。" },
+"Progressive Trance": { chapter: "Trance", desc: "最初是90年代中期出现的新Trance风格，比经典德国风格更现代。受到英国Progressive House音乐的影响。有着非常长的Buildup和Breakdown，约130BPM，现代化的打击乐与鼓组占有极其重要的地位。21世纪初达到鼎盛。" },
+"Uplifting Trance": { chapter: "Trance", desc: "A.K.A. Emotional Trance、Euphoric Trance。由Progressive Trance和Dream Trance演变而来。更强调旋律，更频繁使用'Buildup-Breakdown-Anthem'曲式结构。宽宏大气的沉浸式Breakdown是最具魅力的部分。BPM在135-142之间，常为138和140。" },
+"Hard Trance": { chapter: "Trance", desc: "wiki上的Hard Trance词条描述的实际上是German Trance。BPM回落到140以内，更加注重欣快感。早期的Hard Trance被认为是Early Hardstyle的'垫脚石'。在00年代中期流行度下降。" },
+"Tech Trance": { chapter: "Trance", desc: "起源于90年代中期的德国。响亮的Kick、强硬的Hi-Hats和简单粗犷的旋律，在135-145的BPM间反复渲染黑暗冰冷有侵略性的氛围。此后发展中BPM逐渐降低，对合成器、打击乐、律动和低频部分的侧重高于旋律。" },
+
+"Breakbeat": { chapter: "Breakbeat", desc: "从Techno和House的4/4节拍中分离出来的流派，雏形出现于20世纪70年代末至80年代初。最早是嘻哈制作人采样空鼓（如Amen Break、Funky Drummer）用于Disco Rap作品。后来成为地下电子舞曲重要子流派，推动了Jungle、Drum & Bass等的发展。" },
+"Breakbeat Hardcore": { chapter: "Breakbeat", desc: "A.K.A. Old School Rave Hardcore。九十年代初英国锐舞场景下诞生的曲风。典型特征是相对更快更硬核的Breakbeat、Detroit Techno管弦、滑音钢琴、Bleep Techno音色、Acid Bassline和粗糙的碎拍采样以及变速人声、Hoover的运用。将Rave带向了新方向。" },
+"Jungle": { chapter: "Breakbeat", desc: "1992-1993年从Breakbeat Hardcore发展而来，去除了Hoover和阴森的Ambient等元素，加入器乐采样。脱离锐舞氛围，变得更加注重氛围渲染。拥有基于碎拍硬核的凸出节奏，深植Reggae和Hip-Hop基因，段落间突发性强，有一种骨子里的狂野原始狂欢状态。" },
+"Drum & Bass": { chapter: "Breakbeat", desc: "Jungle制作人想要跳出牙买加雷鬼框架开发的独立音乐形式。1995年Goldie发行专辑Timeless正式将DnB推向舞池。减少了雷鬼元素，BPM进一步提高。已成为英国电子乐引以为傲的文化印记。" },
+"Techstep": { chapter: "Breakbeat", desc: "1995年Ed Rush和DJ Trace提出这一概念。以空旷缥缈的氛围音色和阴鸷狡猾的Bassline营造零下70度的彻骨寒冷。反对使用任何流行乐俗套人声、爵士元素，以工业感音色设计对抗庸俗消费主义。是第一个真正意义上的DnB子风格。" },
+"Neurofunk": { chapter: "Breakbeat", desc: "1997年诞生。作为Techstep子风格，继承了其独特的科幻氛围，BPM加快，鼓组变重，元素更多样化，Bass调制程度进一步加深——这种失真Bass被称为Neuro Bass。最大的卖点就是其生动灵活的Neuro Bass，像破铜烂铁变成了活蹦乱跳的有机体。" },
+"Liquidfunk": { chapter: "Breakbeat", desc: "A.K.A. Liquid DnB。1998年由Fabio提出。160-170bpm的鼓组与如流水般轻快的钢琴片段和空旷环境音相碰撞。如今已脱离Jungle声音约束，变得更加轻盈活泼，是DnB中最清淡的一类，适合一个人静静欣赏。" },
+"Halftime": { chapter: "Breakbeat", desc: "DnB的一种极简做法，更多利用空拍或错拍构造更多变莫测的节奏型。将DnB主要底鼓和军鼓放慢一倍，但保留DnB中精华的快速小打和镲乐器，给Bass更多闪转腾挪的空间。" },
+"Artcore": { chapter: "Breakbeat", desc: "当今最流行的日系电子分支之一。概念用于形容管弦乐融入电子音乐鼓点间的产物。一般以DnB形式出现，但也有J-core和IDM形式。制作人An、Sakuzyo、Onoken、xi、Feryquitous为这种风格的代表人物。" },
+"Breakcore": { chapter: "Breakbeat", desc: "90s中期，英国和澳大利亚的Hardcore制作人将碎拍采样加入作品，形成Breakcore这种极端声音。有Gabber特有的四四拍失真底鼓+Drill n Bass的'碎'拍+Digital Hardcore的撕裂失真人声。10s左右脱离Hardcore元素，探索碎拍的更多形式。" },
+"Big Beat": { chapter: "Breakbeat", desc: "20世纪90年代中后期英国音乐媒体用此词形容The Chemical Brothers、Fatboy Slim、The Prodigy的音乐。特点是编排过的Breakbeats和突出的Basslines，速度更慢但节拍更重，鼓点强劲到接近摇滚，充满Acid House和Techno的科技感音色。" },
+
+"UK Garage": { chapter: "UK Bass", desc: "A.K.A. UKG。主要来自英国的电子舞曲，从90年代初Garage House场景中脱离出来。融合了英国的Breakbeat、Jungle、Reggae等元素，形成了Speed Garage、2-step等风格标签。UK Garage形成了自己的碎拍声音——2-step鼓组，直接对后来的Dubstep、Grime、Trap等产生了很大影响。" },
+"2-step Garage": { chapter: "UK Bass", desc: "20世纪90年代末流行的一种UK Garage音乐。起源于伦敦，特点是摇摆的节奏，很少遵循4 on the floor模式，节奏相对缓慢。从2-step开始Garage逐渐摆脱4/4拍底鼓排列，鼓点变得更加不规则和摇摆，Bassline取得更多发挥空间。创始人是MJ Cole和Wookie。" },
+"Grime": { chapter: "UK Bass", desc: "起源于00年代初，在UK Garage退潮后制作人想要创作更能体现伦敦地下生活、更幽闭黑暗也更真实的音乐。将2-Step与Jungle、Hip-Hop融合，加入更现实冷酷的题材和黑暗氛围。BPM可达140，大量运用切分音。2003年Dizzee Rascal将Grime带入主流视野。" },
+"UK Dubstep": { chapter: "UK Bass", desc: "Dubstep的原型，与Grime同时期出现，脱胎于Dark Garage。2002年在伦敦克罗伊登Big Apple Records唱片店成立。引入了Dub音乐中的延迟音效、Jungle的厚重Bass，将2-step Garage做得更为黑暗游离。Skream、Benga、Hatcha、Loefah等人发展了明确的声音。" },
+"Post-Dubstep": { chapter: "UK Bass", desc: "00年代后期从Dubstep和Future Garage场景发展而来。英国制作人们在Dubstep最狂热时期决定逆潮流，将Dubstep做得更轻柔和有趣。放弃了失真、重型的发展方向，注重氛围，声音更温暖，结构更非传统。Mount Kimbie的《Maybes》标志着正式诞生。" },
+"Bubblegum Bass": { chapter: "UK Bass", desc: "2013年起源，有UK Bass的基因。将流行音乐的'可爱'和'女性化'发挥到极致，充斥着古灵精怪的独立流行音乐采样，配以受UK Bass、Wonky影响的失真狂放节奏。SOPHIE和A. G. Cook是最著名的两位艺术家，厂牌PC Music最具代表性。" },
+"Wonky": { chapter: "UK Bass", desc: "2008年融合了Hip-Hop、Grime、Chiptune、Dubstep、Crunk、Glitch Hop等音乐流派诞生于Beat Scene。常使用特殊切分音与游离节拍，使音乐显得摇摇晃晃。Wonky最终影响并确立了Post-Dubstep的声音。Hyperdub是关键厂牌。" },
+"Future Garage": { chapter: "UK Bass", desc: "A.K.A. Post-Garage、Atmospheric Garage。帮助描述Post-Dubstep音乐，融合UK Garage的2-step节奏模式。新一代制作人将车库音乐精华与自己构思的美学相结合。典型特征：变调人声切片、温暖暗涌的Reese Bass、幽暗朦胧的合成器铺底音色。Burial是最早开创者之一。" },
+
+"Riddim Dubstep": { chapter: "US Bass", desc: "出现于2012年左右，'Riddim'是牙买加语里'Rhythm'的对应词汇。具有锯齿感和潮湿感极强的合成器音色，大量使用重复低音和Kick以及极简Sub-bass。2015年开始占据US Dubstep主流地位。" },
+"Color Bass": { chapter: "US Bass", desc: "最早由Chime于2016年在Rushdown厂牌提出。具有类似Chiptune的活泼，采用激进的水晶感或破碎玻璃感音色，且没有结构和旋律的限制。如今常作为一种音色融入US Bass以外的曲风如DnB和EDM Trap。" },
+"US Dubstep/Brostep": { chapter: "US Bass", desc: "于2010年代后期由Skrillex和Rusko等人首创。采用比UK Dubstep更具侵略性和撕裂感的Wobble Bass和Growl Bass，保留2-step鼓组和140左右的BPM。更注重于中高音部的响度。'Brostep'实际上是英国人给的蔑称，后来被听众接受。" },
+"Melodic Dubstep": { chapter: "US Bass", desc: "于2010年代初期紧随Brostep出现。Buildup和Drop相比于Brostep更注重表现强烈的情感冲击，拥有旋律优美的Drop、饱满华丽的Lead、强劲的拉伸和弦。常伴有优美的Vocal。以Seven Lions的Ophelia Records为中心。" },
+"Deathstep": { chapter: "US Bass", desc: "最早出现于2011年Bratkilla的专辑The Deathstep LP。2010年代中期逐渐脱离Metalstep影响，变得更扭曲、更黑暗。受到Riddim Dubstep、噪音音乐和工业音乐影响，注重无调性，使用独特的Machine Gun Bass。" },
+
+"Hardcore Techno": { chapter: "HDM", desc: "Hardcore Techno的声音像是更硬的Rave Techno，由德国制作人Mescalinum United于1989年创作、90年发布'We Are Arrived'，被认为是第一首Hardcore曲目。直接派生出了更加Downtempo、黑暗、沉闷、极简的Doomcore。" },
+"Gabber": { chapter: "HDM", desc: "约1991诞生于荷兰鹿特丹，Paul Elstak等制作人带动了一种更快的Hardcore形式。主要特征是沉闷扭曲的低音鼓的高速轰鸣。'Gabber'来自阿姆斯特丹Bargoens俚语，意思是'朋友'。Gabber及其亚文化在荷兰非常流行，不少青少年推崇这一音乐和背后的文化。" },
+"Mainstream Hardcore": { chapter: "HDM", desc: "用来形容如今我们所听到的主流Hardcore。Kick从原来的粗糙感变得通透厚重，制作越来越成熟，BPM约160~220。Angerfist、DJ Mad Dog、Miss K8、D-Fence等是代表DJ/制作人。" },
+"Uptempo Hardcore": { chapter: "HDM", desc: "最初由DJ Partyraiser创造，速度比主流Hardcore更快，BPM通常在185-220左右。主要特点是Lo-fi低保真制作，强烈、刺耳、失真的Kick。现代的Uptempo在鼓点上更加激进，Pipe Kick和Zaag Kick是这时期的产物。" },
+"Speedcore": { chapter: "HDM", desc: "出现在1990s中期，与Industrial Hardcore与Terrorcore等高速Hardcore同步发展。早期BPM在230-300之间，现今已很少低于300。Speedcore对HDM界影响甚远，在日本发展出了截然不同的形态。是电子音乐领域里BPM最快的分支。" },
+"Extratone": { chapter: "HDM", desc: "Speedcore的再度升级版，BPM≥1000。BPM过快以至于几乎无法区分Kick了。旗下还有Supertone（BPM 1.5万~120万）和Hypertone（BPM＞120万）。" },
+"Free Tekno": { chapter: "HDM", desc: "出现于1990s早期。Tekno拼写刻意区分于Techno。速度很快，BPM为150到185不等。特点是重复敲击的Kick Drum。与Teknival场景紧密相连——大型免费派对（往往是非法的聚会）。催生了90s后期的Hardtek场景和如今爆火的Frenchcore等。" },
+"Frenchcore": { chapter: "HDM", desc: "原先只是法国的本土Hardcore Techno声音，主要体现在工业元素。本土French Tek声音在Hardtek化后诞生了French Hardtek，不久后进化出如今的Frenchcore。BPM高至190-250，响亮且失真的Offbeat Bassline。Dr. Peacock、Sefa是代表人物。" },
+"Oldskool Rave Hardcore": { chapter: "HDM", desc: "诞生于90年代初期，继承Rave Techno的声音发展。除了Hoover、Noise、Acid和快速的节拍，更有大量Breakbeat、滑音钢琴甚至Vocal加入。比Rave Techno更加'Rave'，将Rave运动带往新方向。后续影响了Happy Hardcore、Jungle等。" },
+"Old School Happycore": { chapter: "HDM", desc: "A.K.A. Happy Hardcore。盛行于1994-97年，主要从Happy Gabber声音发展而来。继承了4/4节拍，Kick从Gabber扭曲的Kick变为俏皮的Bouncey Kick，延续了Breakbeat Hardcore中的Breakbeat元素、Hoover以及明亮的钢琴和振奋的人声。" },
+"UK Hardcore": { chapter: "HDM", desc: "诞生于00年代初，早期UK Hardcore可以认为是削弱版的Freeform，只继承了Euro Trance的要素。00年代中后期随Hands Up流行发展得更像加速的Hands Up。EDM化后2015-2017为巅峰时期，各色厂牌都有自己的特点。" },
+"Freeform Hardcore": { chapter: "HDM", desc: "1990s很多制作人对Happy Hardcore中日渐同质化的声音感到不满，追求更硬的声音表现。结合酸性音色、高速集中的滤波合成器音色、NRG的能量感和Euro Trance的Supersaw，BPM通常在170上下或更高。'Freeform'概念由DJ Sharkey提出。" },
+"Euphoric Hardstyle": { chapter: "HDM", desc: "2010年后兴起，特点是富有感情的旋律、强调积极向上的主题和欢快的听感，在不少HDM乐迷中占据相当重要的位置。发展历程是Kick模式和合成配器进步的表现。通透厚重的Crunchy Kick是其标志性特征。" },
+"Raw Hardstyle": { chapter: "HDM", desc: "A.K.A. Rawstyle。概念出自Zatox于2010年发布的《Raw Style》。听感更黑暗且更具侵略性，Kick更加失真且更硬。通常非常具有实验性，编排也更加变幻莫测。17年后Melodic Rawstyle形式开始逐渐火热。" },
+"Extra Rawstyle": { chapter: "HDM", desc: "A.K.A. Xtra Raw。诞生时间约在2010年，缔造者是Spoohtech。是Vazard和Delete对更Underground更硬的声音追求。拥有更加扭曲的Kick和Screech、极具标志性的Gated Kick和侵略感十足的Kick rolls。比其他Rawstyle更接近Hardcore。" },
+"J-core": { chapter: "HDM", desc: "较大的概念，生发于Nerdcore Techno场景，2000s初期到中期逐渐成型。发展过程中吸收了Hardcore、Tekno、UK Hardcore等欧美HDM风格特点，同时从Hyper Techno、J-Pop、Trance等中吸收灵感。与萌系文化和宅文化关系很大，后与音乐节奏游戏密切相关。" },
+"Pumpcore": { chapter: "HDM", desc: "术语最早起源于日本，受US Dubstep影响。描述了Hardtek的快节奏和高能量版本，在日本制作人中非常受欢迎。本质是Hardtek和Bass Music结合的产物，部分曲目包含Electro House、Complextro、Dubstep、Chiptune等元素。" },
+
+"Hip-Hop": { chapter: "Hip-Hop/Trap/Future Bass", desc: "70年代初出现在美国纽约布朗克斯区。最早并没有Rap，是一种采样James Brown式Funk乐鼓间奏的节拍（这种手法直接影响了Breakbeat的诞生）。直到MC开始在节拍上有韵律地讲话才形成了'Rap'。不仅指一类音乐，而是一种包括DJ、街舞、Rap、涂鸦的流行文化。" },
+"Boom Bap": { chapter: "Hip-Hop/Trap/Future Bass", desc: "发源于80年代末美国东海岸的Hip-Hop流派，是Hip-Hop中最重要的流派之一。'Boom Bap'是拟声词，指强调重拍的'Boom Kick'和'Broken Snare'不断循环，用最少的配器创造最有律动的节拍。是忠于最原始Hip-Hop文化的存在。" },
+"Trap": { chapter: "Hip-Hop/Trap/Future Bass", desc: "00年代末起源于亚特兰大的Hip-Hop流派。'Trap'是亚特兰大俚语，意为出售毒品的地方。最早听感继承了Crunk的舞曲性质。10年代中期Metro Boomin放慢BPM、削弱舞曲性质，形成现在阴暗、迷幻、催眠、极具氛围感的Trap。已成为继Boom Bap之后影响力最大的Hip-Hop流派。" },
+"Drill": { chapter: "Hip-Hop/Trap/Future Bass", desc: "A.K.A. Chicago Drill。2010s初起源于芝加哥的Trap形式。受到大量Footwork影响，有极其尖锐的Snare音色。听感阴森、凶狠，主题通常是暴力和虚无主义。代表制作人和Rapper分别是Young Chop和Chief Keef。后来衍生出UK Drill、Brooklyn Drill等分支。" },
+"Phonk": { chapter: "Hip-Hop/Trap/Future Bass", desc: "21世纪10年代早期至中期由DJ Smokey开创的嘻哈风格，源于Memphis Rap复兴。鼓模式符合2010年代Trap风格、少量Cloud Rap元素、Lofi Hip-Hop的爵士乐采样。Drift Phonk是后来被俄罗斯网络制作人改造的大失真版本，常与'黑暗''跑车''帮派'关联。" },
+"EDM Trap": { chapter: "Hip-Hop/Trap/Future Bass", desc: "2012年正式独立于传统Trap之外。除Hip-Hop根源外还受到Dubstep/Post-Dubstep、Wonky、Grime、UK Bass等影响。2010年代中期出现Hybrid Trap（混合Brostep），后来也包括Halftime和Riddim等影响，发展成更Leftfield、更实验性的风格。" },
+"Future Bass": { chapter: "Hip-Hop/Trap/Future Bass", desc: "电子舞曲大家族，出现于2010年代早期至中期。受到Wonky、EDM Trap、Post-Dubstep和Purple Sound影响。通常以模糊失谐的合成器为特征，主要使用Supersaw，通过Automation使Saw Chords产生旋律优美、轻松愉快的氛围。Flume的Remix作品《You & Me》被认定为第一首Future Bass作品。" },
+"Kawaii Bass": { chapter: "Hip-Hop/Trap/Future Bass", desc: "Future Bass的子流派，以动漫/电子游戏文化为基础，是普通Future Bass更'快乐''可爱''萌'的变体。经常使用Chiptune声音、高音人声、Kawaii采样。日本音乐人Snail's House是最著名又多产的代表制作人之一。" },
+
+"Disco": { chapter: "Disco/Hi-NRG", desc: "起源于20世纪70年代初的非裔美国人、同性恋和西班牙裔社区。4/4拍低音鼓、突出十六分音符Hi-Hats与非重拍Open Hats。结合了Funk吉他和Philly Soul弦乐管弦乐。作为引入DJ、舞厅、Extended Mix和Remix等概念的音乐流派，是所有舞曲的真正开端和基础。" },
+"Electro-Disco": { chapter: "Disco/Hi-NRG", desc: "有很大影响力的迪斯科子流派。迪斯科经典音色在很大程度上被合成器取代，增加了未来感元素如声码器使用，受到Kraftwerk强烈影响。Giorgio Moroder是最受欢迎、最有影响力的制作人。Hi-NRG由电子迪斯科发展而来。" },
+"Italo-Disco": { chapter: "Disco/Hi-NRG", desc: "20世纪70年代末起源于欧洲的舞曲风格，80年代初至中期达巅峰。使用合成器、鼓机（Linn Drum）和八度奏法的反拍Bass，强调动听旋律和有空间感、未来感的氛围。Modern Talking和Ken Laszlo是代表制作人。" },
+"Hi-NRG": { chapter: "Disco/Hi-NRG", desc: "20世纪70年代末紧随电子迪斯科发展而来，迅速成为旧金山和纽约LGBT俱乐部中最受欢迎的电子舞曲类型。快节奏迪斯科音乐，更多使用电子乐器。典型特征：充满活力的序列化合成器音色、八度奏法反拍Bass、大量使用Cowbell和Clap音色。" },
+"Eurobeat": { chapter: "Disco/Hi-NRG", desc: "起源于英国（1985年Records Mirror将Hi-NRG榜改为Eurobeat榜），在日本极度流行。80年代中后期持续占据全球排行榜榜首。90年代在日本继续流行，发展出专属舞蹈'Para Para'，BPM可达150~160。被用于Dance Dance Revolution等跳舞机游戏。" },
+"Eurodance": { chapter: "Disco/Hi-NRG", desc: "A.K.A. Euro-NRG。90年代非常流行的电子舞曲风格。将当时流行的欧洲迪斯科、House、Electro、嘻哈、Hi-NRG和舞蹈音乐文化融合在一起。BPM一般为110~150。见证了90年代各种子风格和融合流派的出现。" },
+"Italo Dance": { chapter: "Disco/Hi-NRG", desc: "A.K.A. Nu Italo Disco。出现于90年代，在80年代末意大利迪斯科衰落后。1999年至2003年达到巅峰。典型BPM在140左右，带劲的Kick与明显反拍Bass（基本连在一起）成为专属特点。Gigi D'Agostino的《Bla Bla Bla》是代表作。" },
+"Hands Up": { chapter: "Disco/Hi-NRG", desc: "A.K.A. Dancecore。最早于90年代末和21世纪初发展起来，独特的高能量、旋律优美、积极的电子舞曲。植根于Trance，BPM通常在140左右。依赖于Supersaw堆叠、受到Hard Trance启发的侧链Bass以及过于入耳的旋律。Scooter和Cascada的热门单曲霸占了主流榜单。" },
+
+"Ambient": { chapter: "Ambient", desc: "1978年Brian Eno创造了'Ambient Music'一词。'氛围音乐是一种存在于旋律与质感之间的音乐，既可以被专心致志地聆听，也可以被轻易地忽略。'源于70年代艺术家们所创造的实验性电子合成音乐。随着新乐器产生日渐发展，不会局限于任何理论知识与规定。" },
+"Dark Ambient": { chapter: "Ambient", desc: "A.K.A. Ambient Industrial。后工业音乐的一种形式，强调不祥、阴郁和不和谐的氛围。经常放弃传统音乐结构，通过使用Drone、Musique concrète、机器噪音、失真手法等唤起黑暗、令人不安的氛围。1980s开始流行，1990s由Orb正式命名。" },
+"Drone": { chapter: "Ambient", desc: "极简主义音乐，主要特点是重复、延续、共鸣的乐器合奏，音高变化幅度较小。直观听感是持续不断的'嗡嗡声'。实验音乐制作人们将以上特质与Ambient、极简主义融合，造就了Drone音乐。" },
+"Space Ambient": { chapter: "Ambient", desc: "A.K.A. Space Music。1970年代初期从Berlin School和其他Progressive Electronic风格中脱离出来。常常使用音序器，听感流动且放松，常用渐进手法，声音遥远、迷幻且空灵。主题是空间、科幻等。" },
+"Psybient/Psychill": { chapter: "Ambient", desc: "Ambient/Chillout音乐的一种形式，兴起于90年代中期。是Psytrance和Goa Trance艺术家创作更慢、更放松曲目的趋势。在Ambient基础上融入Psytrance的催眠、神秘、超现实主义氛围，常与Downtempo缓拍节奏搭配。" },
+"Dungeon Synth": { chapter: "Ambient", desc: "1990年代初期随着黑金属第二波浪潮成型。结合管弦乐和氛围音乐，常用于电影配乐。意图唤醒人们幻想和冒险的思绪，制作人常从欧洲神话、童话故事、RPG游戏中汲取灵感。已经成为一个有着众多子分支的小体系。" },
+"Hauntology": { chapter: "Ambient", desc: "2006年在音乐界兴起的一种哲学/音乐美学理念。被用来描述经过艺术家处理的独特的'闹鬼'声音，给人模拟信号/数字信号上鬼魂的感觉。常使用老旧图书馆音乐采样、磁带嗡嗡声、古老电子设备，以现代形式融合在阴森的类氛围/拼贴音乐中。Leyland Kirby（The Caretaker）是先驱。" },
+
+"Synthwave": { chapter: "Indie", desc: "大部分灵感来自1980年代的合成音乐和流行文化，往往具有'未来主义'主题，从Synth-pop、Progressive Electronic、Italo-Disco等汲取灵感。BPM常为90~130。起源可追溯到2000年代中期法国French House场景。标志性意象包括落日、超跑、霓虹线等。" },
+"Darksynth": { chapter: "Indie", desc: "Synthwave的黑暗面。主题更黑暗、更沉重、更悲惨。2012年在Perturbator、Carpenter Brut、Dance With the Dead等带领下诞生，融入了更专注Bass的工业音乐元素和更快的节奏。已成为Synthwave领域中最流行的风格。" },
+"IDM": { chapter: "Indie", desc: "全称Intelligent Dance Music，即智能舞曲。诞生于90年代早期英国，是一种高度将当时欧洲盛行的电子类型加以融合带向更加实验方向、供家中'聆听'而非跳舞的音乐。由Ambient Techno声音变化而来，消解了舞曲和舞池的联系。Aphex Twin、Autechre等是代表制作人。" },
+"Electronica": { chapter: "Indie", desc: "并不是一种具体的音乐风格，而是电子音乐范畴。泛指一类不嘈杂的电子音乐，先天不是为了让人去尽兴Rave的，但依旧继承了些许舞曲节拍。节奏通常比较舒缓，表达的情感丰富多样。根据配器不同分为Folktronica、Funktronica、Indietronica等。" },
+"Folktronica": { chapter: "Indie", desc: "A.K.A. Laptop Folk。融合原声乐器声音、当代民谣/传统民谣元素，用细小轻巧的节拍搭配富有民族气息的深邃氛围。通常受IDM、Glitch等制作手法和Downtempo形式的影响。Four Tet、The Books等是早期代表。" },
+"Chillwave": { chapter: "Indie", desc: "出现于2000年代后期。模仿80年代音乐，加入怀旧、梦幻的复古潮流元素，迷幻柔和的人声，大量混响，BPM较慢。Washed Out的2009年单曲《Feel It All Around》是最著名的Chillwave歌曲。影响并催生了Vaporwave场景。" },
+"Downtempo": { chapter: "Indie", desc: "BPM较低的、悠闲的电子音乐风格。与氛围音乐类似但通常带有节拍、Groove。节拍有时不断循环以实现催眠效果。包含Chillout、部分IDM、Trip Hop、Lounge、Balearic Beat、Nu-Jazz等。典型Downtempo是带有Funk/Soul/Jazz元素的缓拍舞曲。" },
+"Electro": { chapter: "Indie", desc: "随着早期采样技术发展和TR-808鼓机问世而兴起的广义EDM流派，与80年代早期至中期Hip-Hop关系密切。使用TR-808、切分节奏模式和简单时髦的Bassline编曲。可被视为70年代电子乐（Kraftwerk、Y.M.O.）与随后十年Techno之间的联系。" },
+"Bit Music": { chapter: "Indie", desc: "由视频游戏机、电脑街机游戏中的声音芯片、音序器或模拟这些声音的合成器所创作的电子音乐。70年代初街机游戏开始使用PSG声音芯片播放数字音乐，80年代初出现8-bit/Chiptune声音，80年代中FM合成出现，1987年出现Sequencer & Tracker。" },
+"Midtempo": { chapter: "Indie", desc: "标签化叫法。前身是Midtempo Bass，弱化了侵略性很强的Heavy Bass元素转而强调悦耳的旋律。理论上可指代任何中速（90-105BPM左右）音乐。常见表现形式有：更流行化的Synth-pop、鼓组更4/4的Melodic Bass、NEO-Trance/Hyper Trance场景的部分音乐等。" },
+
+"Vaporwave": { chapter: "Post-Internet", desc: "2010年代初出现在互联网上的电子音乐运动。2010年Chuck Person的专辑《Eccojams Vol.1》被认为是蒸汽运动的开始。几乎所有蒸汽波音乐都基于采样（City Pop、Contemporary R&B、Synth Funk、Smooth Jazz等）。也产生了独特的美学——赛博朋克、动漫、VHS图像失真、全角字符等。" },
+"Future Funk": { chapter: "Post-Internet", desc: "2010年代初期出现于蒸汽波场景中，比旧蒸汽波更有活力。融合了French House和Synth Funk。最常采样City Pop，其次也常采样Boogie、Synth Funk、Disco等。是最主流的蒸汽波子流派之一，火爆程度甚至脱离了蒸汽波的约束形成了自己的圈子。" },
+"Mallsoft": { chapter: "Post-Internet", desc: "2012年最早出现。将蒸汽波主要特征与背景音乐/电梯音乐相融合。通常对商场常播放的音乐进行采样（Easy Listening、Smooth Jazz等），使用大混响大延迟效果。给人身处大型商场的感觉——巨大空间感和强烈朦胧感。" },
+"Slushwave": { chapter: "Post-Internet", desc: "至少追溯到2013年底。采用单一采样，营造氛围音乐的音景，堆叠大量效果和失真（最典型的是相位器、延迟和混响），形成有别于典型Vaporwave的'泥泞'声音。歌曲时长很长（超过6分钟），循环音轨缓慢而大量重复以达到催眠效果。" },
+"HexD": { chapter: "Post-Internet", desc: "2019年出现在Soundcloud的微流派。更多表现为一种对声音的处理手法：对混音素材进行大量Bitcrush，高度压缩和扭曲的制作。以Trap、Cloud Rap、Emo Rap等现有材料为基础，以Trance、Breakbeat为背景。具有强大的包容性，可和多种风格融合形成大量分支。" },
+"Nightcore": { chapter: "Post-Internet", desc: "始于2000年代初的一种作曲手法。采样一首歌将其升速升调，BPM通常被提高到200左右，强调被调高音调的'可爱'人声。制作成本很低，很多作品直接以视频形式上传到YouTube。早期以加速Eurodance、Vocal Trance和Hands Up为表现形式。" },
+"Hyper Pop": { chapter: "Post-Internet", desc: "2013年前后PC Music厂牌发行了很有特色的音乐——夸张FX、奇怪采样、对2000s千禧年的怀旧与复古、对消费主义的反思。A.G.Cook与SOPHIE共同发起的音乐计划QT逐渐定义了Hyperpop。2020年随TikTok爆火，衍生出Digicore、Glitchcore、Dariacore等分支。" },
+"Wave": { chapter: "Post-Internet", desc: "起源于10年代中期。吸收了很多Future Garage、Trap/Dubstep和Witch House的影响，以及Cloud Rap的混合。梦幻、冰冷、怀旧、未来感、情绪化。最初UK Wave主要受Dubstep/Grime影响。Hardwave是更商业化的变体，保留了Reese Bass和冰冷合成器音色。" },
+"NEO-Trance": { chapter: "Post-Internet", desc: "Virtual Self (Porter Robinson)在2017年发行同名专辑后理念应运而生。与Ambient Trance、Classic/Euro-Trance、Wave Music、Hardcore都有明显交集，有的甚至做成Jungle、DnB、UKG等英式电子舞曲节奏型。'NEO'带有强烈的自由主义创作色彩。" },
+"Hyper Trance": { chapter: "Post-Internet", desc: "概念外延比NEO-Trance更广，算是NEO-Trance的进一步自我演化。2021年nuphory牵头网络制作人发行合集《HYPERTRANCE Vol.1》。分三大派：Hardcore/RAVE派、Euro Dance/Y2K派、Internet派（融合Hardwave/Breakcore）。" },
+"Deconstructed Club": { chapter: "Post-Internet", desc: "A.K.A. Post-Club、Experimental Club。21世纪10年代在互联网环境下诞生。制作人/DJ们将Trap、Ballroom、Jersey Club、Grime等节奏合并并与工业音乐声音混合。常涉及种族主义、女权主义、殖民主义、未来主义等主题。具有侵略性、非寻常的声音设计。" },
+
+"Industrial (1st Wave)": { chapter: "Industrial Music", desc: "工业音乐流派名称来源于Industrial Records，该厂牌由先驱Throbbing Gristle于70年代中期创立。第一波工业浪潮的工业音乐满是工业化、实验性的噪音。在80年代早期至中期逐渐消退，更电子化、大众化的'后工业'取而代之。" },
+"Post-Industrial": { chapter: "Industrial Music", desc: "后工业音乐是概括性术语。将工业音乐带出70年代末至80年代中期的声音，在其中引入摇滚、EDM和金属等更传统的元素。90年代末至2000年代初Coil、Xiu Xiu等乐队发展了新的更难归类的后工业音乐风格。" },
+"EBM": { chapter: "Industrial Music", desc: "Electronic Body Music。工业音乐分支，最早从工业音乐中分离出来的子流派之一。雏形出现于1980年代先驱Front 242的歌曲中，将Post-Punk和工业音乐结合。融合了Kraftwerk元素和第一批工业乐队的氛围和实验性。在比利时非常流行，迅速传遍欧洲和全球。" },
+"Electro-Industrial": { chapter: "Industrial Music", desc: "定义松散的术语。融合第一批乐队（Throbbing Gristle等）的实验风格和新兴EBM场景中更多可跳舞元素。使用电子乐器、循环旋律以及从采样到电力工具和机械的'被找到的声音'。Skinny Puppy、Ministry、Front Line Assembly和KMFDM率先提出。" },
+"Witch House": { chapter: "Industrial Music", desc: "2000年代后期兴起。融合了Southern Hip-Hop（尤其是孟菲斯说唱）鼓点编排和节奏；Chopped & Screwed阴暗、催眠、超现实的音色设计；Darkwave和Ethereal Wave的极简哥特式风格；Shoegaze和Dream Pop梦幻般的音墙质感。SALEM一手开创。" },
+"Power Noise": { chapter: "Industrial Music", desc: "A.K.A. Rhythmic Noise。后工业与噪音结合体。结合噪音Loop和电子音乐式节奏。与常规噪音不同，Power Noise是乐器性的，基于严重失真的鼓机，节拍往往是4/4拍且可以跟着跳舞。最早可追溯到1980年代，实际源于1997年Noisex的《United》。" },
+
+"Dub": { chapter: "Fusion/Ethnic", desc: "1950~1960年代牙买加兴起了Sound System文化。'Dub'来自Double（双面唱片）的口头语。King Tubby是真正意义上的创始人，运用数字电路知识将混音台改造成乐器，将雷鬼乐人声与配器分离重组，加入大量回声、混响、延迟。这种手法后来被称为'Remix'。深远影响了Jungle、Grime和Dubstep。" },
+"Reggaeton": { chapter: "Fusion/Ethnic", desc: "受到牙买加雷鬼乐影响的舞曲，首次出现于巴拿马，1980s在波多黎各发展。1994年Daddy Yankee和DJ Playero首次用Reggaeton描述这种波多黎各地下电子舞曲风格。2004年《Gasolina》火爆全美，2017年《Despacito》成为现象级全球热单。" },
+"Dancehall": { chapter: "Fusion/Ethnic", desc: "起源于1970s牙买加政治动荡。1980年代Yellowman出道，在Dancehall音乐中延续了Deejay模式，加入大量明确政治和性指向的歌词。1980s后期合成器节奏取代人力，加快速度、复杂节拍。逐渐流行于欧美音乐界。" },
+"Soca": { chapter: "Fusion/Ethnic", desc: "起源于加勒比地区特立尼达和多巴哥的流派。以欢快节奏和富有感染力的节奏闻名，融合Calypso、Reggae和Dancehall元素。常与狂欢节庆祝活动联系在一起。1970s由Lord Shorty提出，旨在融合东印第安音乐和Calypso音乐。" },
+"Afrobeat": { chapter: "Fusion/Ethnic", desc: "融合西非音乐元素的Breakbeat风格，出现于上世纪七十年代非洲。近年来逐渐脱离Breakbeat元素，加入更多R&B和电子流行元素，在世界范围内逐渐流行。主要发明人是尼日利亚乐手Fela Kuti和他的乐队Nigeria 70。" },
+"Synth Pop": { chapter: "Fusion/Ethnic", desc: "更受电子乐影响的流行音乐。起源可追溯到1970年代初至中期，在1980年代获得了巨大的商业成功。突出旋律表现和合成器音色。最初由Krautrock乐队Kraftwerk首创。Depeche Mode、Pet Shop Boys、Yellow Magic Orchestra是代表。" },
+"New Wave": { chapter: "Fusion/Ethnic", desc: "出现于1970年代后期，很大程度上受到朋克摇滚、流行摇滚的影响。依赖激进的电吉他旋律、复古合成器音色和大多数4/4拍导向的节奏。Disco、Afrobeat等对这一流派产生了强烈影响。1990年代开始走下坡路，2000年代出现在很多独立摇滚中。" },
+"Dark Wave": { chapter: "Fusion/Ethnic", desc: "从New Wave中出现的子流派。结合了黑暗、内省、悲伤、哥特式的氛围。艺术家们逐渐开始加入合成器和鼓机，最终变成了一种黑暗的电子音乐。也涵盖了摇滚中黑暗、哥特式的流派。" },
+"Electro Pop": { chapter: "Fusion/Ethnic", desc: "2000年代出现的电子流行。特点是密集、复杂、分层的制作，伴随模糊而温暖的电气音色/Bass。相比于Synth Pop进一步电气化，更注重流行音乐架构。尽管起源于地下电子音乐场景，很快便获得主流成功——Lady Gaga、Britney Spears、Katy Perry等。" },
+"Electro Swing": { chapter: "Fusion/Ethnic", desc: "最初出现于20世纪90年代Swing Revival场景之后。将Swing/爵士乐与电子舞曲结合，旨在重现20世纪20年代末至40年代中期的爵士乐氛围。经常直接采样爵士乐或乐器独奏。常用乐器有小号、单簧管、钢琴、萨克斯等。Caravan Palace是代表。" },
+"City Pop": { chapter: "Fusion/Ethnic", desc: "以日本场景为主的流行音乐，在1970年代至1980年代间日本泡沫经济时期流行。通常针对比J-Pop更成熟的听众，具有更现代、更西方化的声音。第二波浪潮始于YMO的Synth-pop/Techno-pop的流行和商业化。是Vaporwave和Future Funk的最主要采样来源。" },
+"J-Pop": { chapter: "Fusion/Ethnic", desc: "1989年向平成时代过渡的日本流行音乐类型。从早期Kayōkyoku、Idol Kayō、City Pop发展而来。采用了更广泛的西方音乐风格，通常用Electro-pop、Synth-pop、Dance-pop手法制作。几乎可以涵盖所有1980s以后的日本流行音乐。代表：宇多田光、米津玄师等。" },
+"K-Pop": { chapter: "Fusion/Ethnic", desc: "韩国当代流行音乐，起源于1980年代的Trot音乐。经历了五个发展阶段：Hip-Hop & Rock阶段→Euro Dance阶段→Idol & Electro Pop阶段→EDM阶段→UK Dance阶段。近年NEWJEANS等团体创新性将UK Garage、Hardcore Breaks元素融入制作之中。" },
+
+"Krautrock": { chapter: "Fusion/Ethnic", desc: "1960年代末和1970年代初在德国起源的实验摇滚流派。特点是使用电子乐器、重复的节奏和即兴创作。标志性声音将摇滚乐队乐器与电子乐器和纹理混合在一起。常见节奏是稳定的4/4拍子（motorik）。代表乐队：Tangerine Dream、Faust、Can、Kraftwerk、Neu！、Cluster。" },
+"Digital Hardcore": { chapter: "Fusion/Ethnic", desc: "融合了硬核朋克和电子音乐元素的音乐类型。1990年代初期在德国发展起来，追随Alec Empire和Atari Teenage Riot等艺术家。通常是高节奏和粗糙的，将Hardcore Punk和Riot Grrrl的速度、沉重和态度与Hardcore Techno、Drum & Bass以及Industrial Rock相结合。" },
+"Alternative Dance": { chapter: "Fusion/Ethnic", desc: "结合了电子音乐结构、合成器采样和Post-Disco的展开方式和轻松的另类摇滚风格。New Order被认为是第一支另类舞曲组合。对Bristol Sound、Trip Hop音乐产生了影响。近年来大量另类流行/摇滚艺术家用电子舞曲来试验。" },
+"New Jack Swing": { chapter: "Fusion/Ethnic", desc: "起源于80年代末。公认的缔造者是Teddy Riley。通常使用合成器和鼓机编曲，有着强劲节拍和标志性Orchestra Hit音色。80年代末到90年代初成为黑人音乐的主流形式之一。Michael Jackson在90年代的大部分歌曲都是这种风格。" },
+"Electro Soul": { chapter: "Fusion/Ethnic", desc: "电子音乐与灵魂乐的混合物，电子元素体现在Bassline和合成器音色。诞生于上世纪八十年代末期，伴随Contemporary R&B和Disco/Funk浪潮发生变革。Dubstep的Bassline也常在Electro Soul中得以体现，Disco复古电子节拍和Hip-Hop说唱元素也常被运用。" },
+"Funk Carioca": { chapter: "Fusion/Ethnic", desc: "A.K.A. Baile Funk、Brazilian Funk。1980s中期诞生于巴西里约热内卢的电子舞曲。不受Funk乐影响，风格特征来源于Miami Bass和Gangsta Rap。通常采用808鼓机制作'Bum-Cha-Cha'节奏并辅以葡萄牙语人声。2001年《纽约时报》正式认定Funk Carioca为独立风格。" }
+};
+
+// ===== BUILD NODES & EDGES =====
+const nodesArr = [];
+const edgesArr = [];
+let nid = 0;
+const keyMap = {};
+
+function n(label, chapter, level = 0) {
+  const key = chapter + "::" + label;
+  if (keyMap[key]) return keyMap[key];
+  const id = nid++;
+  const color = chapterColors[chapter] || "#aaa";
+  const desc = descDB[label];
+  nodesArr.push({ id, label, chapter, level, color, hasDesc: !!desc });
+  keyMap[key] = id;
+  return id;
+}
+
+function e(from, to, type = "down") {
+  edgesArr.push({ from, to, type });
+}
+
+function g(name, chapter, level, ups, downs) {
+  const id = n(name, chapter, level);
+  if (ups) {
+    (Array.isArray(ups) ? ups : [ups]).forEach(u => {
+      const uid = n(u, chapter, level - 1);
+      e(uid, id, "up");
+    });
+  }
+  if (downs) {
+    (Array.isArray(downs) ? downs : [downs]).forEach(d => {
+      const did = n(d, chapter, level + 1);
+      e(id, did, "down");
+    });
+  }
+  return id;
+}
+
+// ===== HOUSE =====
+(function(){
+  const C="House";
+  g("Chicago House",C,0,["Disco","Hip-Hop"],["Acid House","Italo House","Hip House","Piano House","Detroit House"]);
+  g("Piano House",C,1,"Chicago House",null);
+  g("Acid House",C,1,"Chicago House",["Acid Trance","Acid Techno","Breakbeat Hardcore"]);
+  g("Hip House",C,1,["Chicago House","Hip-Hop"],["Ghetto House","Ghettotech","Ballroom"]);
+  g("Detroit House",C,1,"Chicago House",["Detroit Techno","Tech House"]);
+  g("UK House",C,0,["Chicago House","Techno","Breakbeat"],null);
+  g("Euro House",C,0,["House","Eurodance","Dance-pop"],null);
+  g("Italo House",C,0,["Chicago House","Italo Disco"],null);
+  g("Kwaito",C,0,["Hiphop","Hip House","South African Music"],["Afro House","Gqom","Amapiano"]);
+  g("Gqom",C,1,["House","Kwaito","Techno"],null);
+  g("Amapiano",C,1,["Kwaito","Deep House","Jazz"],null);
+  g("Tribal House",C,0,["Deep House","Tech House","Tribe music"],null);
+  g("Balearic Beat",C,0,["House","Electronica","Chillout"],"Ibiza Trance");
+  g("Soulful House",C,0,["Jazz","House","Soul"],null);
+  g("Ambient House",C,0,["Ambient","House"],null);
+  g("Micro House",C,0,["Minimal Techno","Bitpop","Minimalism"],null);
+  g("Disco House",C,0,["Chicago House","Disco","HI-NRG"],null);
+  g("Funky House",C,0,["Chicago House","Funk","Disco"],"Nu-Disco");
+  g("Nu-Disco",C,1,["Disco","Funky House","Rock","Pop"],null);
+  g("French House",C,0,["French Electro","House","French Disco"],["Blog House","Synthwave"]);
+  g("Blog House",C,1,["Electro","French House","Electroclash"],null);
+  g("Garage House",C,0,["Disco","Chicago House","Dub","Gospel"],["UK Garage","New Jersey Sound","Gospel House"]);
+  g("Gospel House",C,1,"Garage House",null);
+  g("Ballroom",C,0,["Hip House","Ballroom Culture","Hip-Hop"],"Deconstructed Club");
+  g("Baltimore Club",C,0,["Miami Bass","Breakbeat","House","Hiphop"],["Jersey Club","Philly Club"]);
+  g("Jersey Club",C,1,"Baltimore Club","J-Jersey Club");
+  g("J-Jersey Club",C,2,["Jersey Club","J-core","Kawaii Bass"],null);
+  g("Philly Club",C,1,["Jersey Club","East Coast Rap","Trap"],null);
+  g("Ghetto House",C,0,"Chicago House",["EDM Ghetto House","Ghettotech","Juke House","Footwork"]);
+  g("Ghettotech",C,1,["Ghetto House","UK Garage","Techno"],null);
+  g("Juke House",C,1,"Ghetto House",null);
+  g("Footwork",C,1,"Ghetto House",["Footcore","Footwork Jungle"]);
+  g("Tech House",C,0,["Techno","House","Deep House"],["Deep Tech","Rominimal","Gangsta House"]);
+  g("Deep Tech",C,1,["Tech House","Deep House","UK Garage"],null);
+  g("Gangsta House",C,1,["Tech House","Bass House","Deep House"],"Brazilian Bass");
+  g("Deep House",C,0,["Chicago House","Jazz","Soul"],["EDM Deep House","Future House","Afro House","Jazz House","Lo-Fi House","Outsider House","Chill House","Tropical House","Brazilian Bass","Organic House"]);
+  g("Afro House",C,1,["Deep House","South African Music","Kwaito"],["Tribal House","Amapiano"]);
+  g("Tropical House",C,1,["Deep House","Balearic Beat","pop EDM"],null);
+  g("Future House",C,1,["pop EDM","Deep House","UK Garage"],["Future Bounce","Future Groove"]);
+  g("Future Bounce",C,2,["Future House","pop EDM"],null);
+  g("Bass House",C,0,["Riddim Dubstep","Deep House","Bass Music"],["Riddim House","Speed House"]);
+  g("Speed House",C,1,"Bass House","Speed Bounce");
+  g("Progressive House",C,0,"House",["EDM Progressive House","Deep Progressive House","Melodic Progressive House"]);
+  g("EDM Progressive House",C,1,["Progressive House","pop EDM"],"Melodic House");
+  g("Melodic House",C,2,"EDM Progressive House",null);
+  g("Electro House",C,0,["Electro Pop","House"],["Bass House","EDM Electro House","Fidget House"]);
+  g("Fidget House",C,1,["Electro House","Breakbeat Hardcore"],["Complextro","Stutter House"]);
+  g("EDM Electro House",C,1,["Electro House","Electroclash","Pop EDM"],["Bigroom House","Complextro"]);
+  g("Complextro",C,2,["EDM Electro House","Dubstep","Fidget House"],null);
+  g("Bigroom House",C,2,"EDM Electro House",["Dutch House","EDM Techno","Future Rave","Groove House","Jungle Terror","EDM PSY"]);
+  g("EDM PSY",C,3,["Mainstream Psytrance","Bigroom House"],null);
+  g("Melbourne Bounce",C,0,["Dutch House","EDM Electro House","Mákina","UK Bounce"],["Psy Bounce","Vina House","Hard Bounce"]);
+  g("Moombahton",C,0,["Electro House","Reggaeton","Dutch House"],["Moombahcore","Moombahsoul"]);
+  g("UC Hard House",C,0,["Chicago House","Hardcore Techno","Gabber"],null);
+  g("Diva House",C,0,["House","Soul","Disco"],"Hardbag");
+  g("Hardbag",C,1,"Diva House","UK Hard House");
+  g("UK Hard House",C,0,["Hardbag","German Trance","NRG"],["Nu-NRG","UK Bounce","Spanish Hard House"]);
+  g("UK Bounce",C,1,"UK Hard House",["Hard Bounce","Melbourne Bounce"]);
+  g("Spanish Hard House",C,1,["UK Hard House","Makina","Happy Hardcore"],"Hard Bass");
+  g("Hard Bass",C,2,["Scouse House","Hardstyle","UK Hard House","Powerstomp","Techno"],"Metal Shade");
+  g("Metal Shade",C,3,["Hard Bass","UK Bounce","Hardcore"],null);
+  g("Hard Bounce",C,2,["UK Bounce","Hardcore","UK Hard House","Hardstyle"],null);
+  g("Future Rave",C,0,["Bigroom House","Trance","Techno","pop EDM"],null);
+  g("Color House",C,0,["Complextro","Color Bass","US Bass","Future House"],null);
+  g("Stutter House",C,0,["Fidget House","Deep House","Tech House"],null);
+  g("Leftfield House",C,0,"House",null);
+  g("Latin House",C,0,["Latin music","Reggaeton","House"],null);
+  g("Jackin' House",C,0,["Chicago House","Disco","Swing"],null);
+  g("New Jersey Sound",C,1,["Deep House","Garage House","Gospel"],null);
+  g("Budots",C,0,"House",null);
+  g("Changa Tuki",C,0,"House",null);
+  g("Rominimal",C,1,["Tech House","Techno","Minimal House"],null);
+  g("EDM Deep House",C,1,["Deep House","pop EDM"],"Brazilian Bass");
+  g("Brazilian Bass",C,2,"EDM Deep House","Slap House");
+  g("Slap House",C,3,["Brazilian Bass","pop EDM"],null);
+  g("Future Groove",C,2,["Groove House","Future House","Soul","Funk"],null);
+  g("Riddim House",C,1,["Bass House","Brostep","Riddim Dubstep"],null);
+  g("Speed Bounce",C,2,["Future House","Tech House","Melbourne Bounce"],null);
+  g("Pizzicato Prog",C,1,["Progressive House","Trance"],null);
+  g("Deep Progressive House",C,1,["Progressive House","Deep House"],null);
+  g("Melodic Progressive House",C,1,"Progressive House",null);
+  g("Trouse",C,0,["Trance","House"],null);
+  g("Glitch House",C,0,["House","Complextro","Fidget House","Glitchcore","Glitch Hop"],null);
+  g("Dutch House",C,3,"Bigroom House",["Bigroom House","Moombahton","Melbourne Bounce"]);
+  g("Groove House",C,3,["Bigroom House","EDM Electro House","EDM Progressive House"],null);
+  g("Jungle Terror",C,3,"Bigroom House",null);
+  g("Psy Bounce",C,1,["Melbourne Bounce","Psy Trance","EDM PSY"],null);
+  g("Vina House",C,1,["House","Vina Pop","Melbourne Bounce","Eurodance"],null);
+  g("Moombahsoul",C,1,["Moombahton","Soul","R&B","Jazz"],null);
+  g("Poky",C,0,["House","Trance","UK Bounce"],null);
+  g("Lo-Fi Deep House",C,1,["Lo-Fi","Deep House","Jazz"],null);
+  g("Outsider House",C,1,["Deep House","Lo-Fi"],null);
+  g("Lo-Fi House",C,1,["Deep House","Vaporwave","Outsider House","Jazz"],null);
+  g("Chill House",C,1,["Chillout","Ambient","Deep House"],"Organic House");
+  g("Organic House",C,2,["Deep House","Chill House"],null);
+  g("Jazz House",C,1,["Deep House","Jazz"],null);
+  g("EDM Ghetto House",C,1,["Ghetto House","pop EDM"],null);
+})();
+
+// ===== TECHNO =====
+(function(){
+  const C="Techno";
+  g("Detroit Techno",C,0,["Chicago House","Detroit House","Disco"],["Acid Techno","Ambient Techno","Bleep Techno"]);
+  g("Bleep Techno",C,0,["Techno","UK Techno"],["Breakbeat Hardcore","UK Garage","Grime"]);
+  g("Belgian Techno",C,0,["EBM","Rave","Bleep Techno","Acid House","New Beat"],"Hyper Techno");
+  g("Hyper Techno",C,1,["J-Rave","Belgian Techno","J-core","Eurodance"],null);
+  g("German Tekno/Berlin Techno",C,0,["Detroit Techno","Tekno"],null);
+  g("Acid Techno",C,0,["Techno","Acid House","Rave Music"],null);
+  g("Ambient Techno",C,0,["Techno","Ambient","Downtempo"],"IDM");
+  g("Minimal Techno",C,0,["Techno","Minimalism"],["Deep Techno","Industrial Techno","Schranz"]);
+  g("Deep Techno",C,1,["Minimal Techno","Deep House"],null);
+  g("Dub Techno",C,0,["Minimal Techno","Dub"],["Ambient Dub Techno","Space Techno"]);
+  g("Ambient Dub Techno",C,1,["Dub Techno","Ambient Dub"],null);
+  g("Space Techno",C,1,["Dub Techno","Ambient","Space Music"],null);
+  g("UK Techno",C,0,["Techno","Breakbeat","IDM"],null);
+  g("Hi-Tech Jazz",C,0,["Techno","Nu-Jazz"],null);
+  g("Wonky Techno",C,0,["Techno","Experimental"],null);
+  g("Leftfield Techno",C,0,"Techno",null);
+  g("Dark Techno",C,0,["Italian Techno","Dark Ambient","Drone"],"Industrial Techno");
+  g("Industrial Techno",C,1,["Dark Techno","Dub Techno","Minimal Techno","Post-Industrial"],"Birmingham Sound");
+  g("Birmingham Sound",C,2,["Industrial Techno","Post-Industrial","Synth-pop"],null);
+  g("Hard Techno",C,0,["Hardcore Techno","New Beat"],"Schranz");
+  g("Schranz",C,1,["Hard Techno","Minimal Techno"],"J-Schranz");
+  g("J-Schranz",C,2,["Schranz","J-core"],null);
+  g("Future Techno",C,0,["Techno","Electro House"],null);
+  g("Hardgroove",C,0,["Techno","Tech House","Tribal House"],null);
+  g("Psy Techno",C,0,["Psy Trance","Techno"],null);
+  g("Hypnotic Techno",C,0,["Minimal Techno","Dark Techno","Dub Techno"],null);
+  g("Melodic Techno",C,0,["Techno","Progressive House","Progressive Trance"],null);
+  g("Melodic Hard Techno",C,0,["Hard Techno","Schranz","Industrial Techno","Hard Trance"],null);
+  g("Peak Time Techno",C,0,["Techno","Electronic Dance Music"],null);
+  g("EDM Techno",C,0,["Techno","Electronic Dance Music"],"Rave Room");
+  g("Rave Room",C,1,["EDM Techno","EDM House"],null);
+})();
+
+// ===== TRANCE =====
+(function(){
+  const C="Trance";
+  g("Classic Trance",C,0,["House","Techno","EBM","Classical"],["Tech Trance","Acid Trance","Progressive Trance"]);
+  g("Acid Trance",C,1,["Trance","Acid House"],"Hard Acid");
+  g("Hard Acid",C,2,["Acid Trance","Hard Acid Techno"],["German Trance","NRG","Goa Trance"]);
+  g("Ibiza Trance",C,1,["Trance","Balearic Beat"],"Dream Trance");
+  g("Dream Trance",C,2,["Ibiza Trance","House"],null);
+  g("Vocal Trance",C,0,["Trance","Pop"],null);
+  g("Euro Trance",C,0,["Ibiza Trance","Eurodance"],["Hard Trance","Hands Up"]);
+  g("Tech Trance",C,0,["Trance","Techno"],"Techlifting Trance");
+  g("Hard Trance",C,0,["Euro Trance","German Trance"],["Early Hardstyle","Hardlifting Trance"]);
+  g("Uplifting Trance",C,0,["Progressive Trance","Dream Trance","Hard Trance"],["Orchestral Trance","Techlifting Trance","Hardlifting Trance","Psylifting Trance"]);
+  g("Orchestral Trance",C,1,"Uplifting Trance",null);
+  g("Techlifting Trance",C,1,["Tech Trance","Uplifting Trance","Acid Trance","Psytrance"],null);
+  g("Hardlifting Trance",C,1,["Hard Trance","Uplifting Trance"],null);
+  g("Psylifting Trance",C,1,["Psytrance","Uplifting Trance"],null);
+  g("Progressive Trance",C,0,["Trance","Progressive House"],["Bigroom Trance","Electro Trance","Trance 2.0","Trance 3.0"]);
+  g("Bigroom Trance",C,1,["Progressive Trance","Electro House","Bigroom House"],null);
+  g("Electro Trance",C,1,["Progressive Trance","Uplifting Trance","Electro House","Complextro"],null);
+  g("Trance 2.0",C,1,["Progressive Trance","pop EDM"],null);
+  g("Trance 3.0",C,1,["Progressive Trance","Tech Trance","Techno"],null);
+  g("J-Trance",C,0,"Trance","Cyber Trance");
+  g("Cyber Trance",C,1,["J-Trance","Uplifting Trance","Drum & Bass"],null);
+  g("Goa Trance",C,0,["Psychedelic Trance","New Beat","EBM"],["Nitzhonot","New School Goa"]);
+  g("Nitzhonot",C,1,"Goa Trance",null);
+  g("New School Goa",C,1,"Goa Trance",null);
+  g("Psy Trance",C,0,["Psychedelic Trance","Goa Trance"],["Dark Psytrance","Full-On","Suomisaundi","Psy Tech","Progressive Psytrance","Mainstream Psytrance"]);
+  g("Dark Psytrance",C,1,"Psy Trance",["Forest Psytrance","Psycore","Hi-Tech"]);
+  g("Forest Psytrance",C,2,"Dark Psytrance",null);
+  g("Psycore",C,2,["Dark Psytrance","Speedcore"],null);
+  g("Hi-Tech",C,2,["Dark Psytrance","Full-On","Psycore"],null);
+  g("Full-On",C,1,"Psy Trance",["Twilight Full-On","J-Hi-Tech"]);
+  g("Twilight Full-On",C,2,["Full-On","Dark Psytrance"],null);
+  g("J-Hi-Tech",C,2,["Full-On","Complextro","J-core","Hi-Tech"],null);
+  g("Suomisaundi",C,1,["Psy Trance","Goa Trance","Acid Trance"],null);
+  g("Psy Tech",C,1,["Psy Trance","Techno","Tech Trance"],null);
+  g("Progressive Psytrance",C,1,["Psy Trance","Progressive Trance"],"Zenonesque");
+  g("Zenonesque",C,2,["Progressive Psytrance","Psy Tech"],null);
+  g("Mainstream Psytrance",C,1,["pop EDM","Psy Trance"],"EDM PSY");
+})();
+
+// ===== BREAKBEAT =====
+(function(){
+  const C="Breakbeat";
+  g("Breakbeat",C,0,["Hip-Hop","Acid House","Techno"],["Jungle","Drum & Bass","UK Garage","Grime","Dubstep"]);
+  g("Breakbeat Hardcore",C,0,["Detroit Techno","Bleep Techno","Hip-Hop","Breakbeat","Acid House","New Beat"],["Jungle","Drum & Bass","Happy Hardcore"]);
+  g("Jungle",C,0,["Breakbeat Hardcore","Jungle Techno"],["Darkcore Jungle","Drum & Bass","Ragga Jungle"]);
+  g("Ragga Jungle",C,1,["Reggae","Dancehall","Jungle"],["Hardstep","Atmospheric Jungle","Darkcore Jungle"]);
+  g("Atmospheric Jungle",C,1,["Ragga Jungle","Ambient","IDM"],["Liquidfunk","Atmospheric D&B"]);
+  g("Darkcore Jungle",C,1,["Ragga Jungle","Darkcore (Breakbeat Hardcore)"],["Hardstep","Techstep"]);
+  g("Hardstep (Jungle)",C,2,"Jungle","Drum & Bass");
+  g("Drum & Bass",C,0,["Ragga Jungle","Darkcore Jungle","Techno","Breakbeat","Hardcore"],["Halftime","Techstep","Jazzstep","Mainstream D&B","Artcore"]);
+  g("Techstep",C,1,["Darkcore Jungle","Hardstep"],"Neurofunk");
+  g("Darkstep",C,1,["Techstep","Darkcore Jungle"],"Neurofunk");
+  g("Neurofunk",C,2,["Techstep","Darkstep"],["Skullstep","Neuro Hop"]);
+  g("Skullstep",C,3,["Techstep","Darkstep","Hardstep","Metal","Neurofunk"],null);
+  g("Jump Up",C,1,["Jungle","Hardstep","Techstep"],"Clownstep");
+  g("Clownstep",C,2,["Jump Up","Neurofunk","Big Beat"],null);
+  g("Jazzstep",C,1,["Jungle","Drum & Bass","Jazz"],"Liquidfunk");
+  g("Liquidfunk",C,2,"Jazzstep","Artcore");
+  g("Halftime",C,1,["Drum & Bass","Dubstep"],null);
+  g("Artcore",C,1,["Liquidfunk","Melodic D&B","J-core"],"Pianocore");
+  g("Pianocore",C,2,"Artcore",null);
+  g("Breakcore",C,0,["Raggacore","Hardcore","Drill 'n' Bass","Digital Hardcore"],["Mashcore","Lolicore","Glitchcore","Modern Breakcore"]);
+  g("Big Beat",C,0,["Breakbeat","Acid House","Techno","Rock","Hip-Hop"],["Blog House","Electro House","Progressive Breaks"]);
+  g("Progressive Breaks",C,1,["Breakbeat","Progressive House","Trance"],null);
+  g("Nu Skool Breaks",C,1,["Breakbeat","Drum & Bass","Electro","Hip-Hop"],null);
+  g("Modern Breakcore",C,1,"Breakcore",["Atmospheric Breakcore","Depressive Breakcore","Chill Breakcore"]);
+  g("Atmospheric Breakcore",C,2,["Atmospheric Jungle","Modern Breakcore"],["Depressive Breakcore","Chill Breakcore","Hyper Trance"]);
+  g("Depressive Breakcore",C,3,["Atmospheric Breakcore","Ambient"],"Hyper Trance");
+  g("Chill Breakcore",C,3,["Drum & Bass","Atmospheric Breakcore","Depressive Breakcore"],"Hyper Trance");
+  g("Drum Funk",C,1,["Drum & Bass","Jungle","Breakbeat"],null);
+  g("Sambass",C,1,["Drum & Bass","Samba","Latin Jazz"],null);
+  g("Microfunk",C,1,["Minimal Techno","Minimal D&B","IDM"],null);
+})();
+
+// ===== UK BASS =====
+(function(){
+  const C="UK Bass";
+  g("UK Garage",C,0,["Garage House","Breakbeat","Jungle","Reggae"],["UK Funky","Bassline","Grime","Dubstep","Future Garage"]);
+  g("Speed Garage",C,1,"UK Garage","4×4 Garage");
+  g("2-step Garage",C,1,"UK Garage","Dubstep");
+  g("4×4 Garage",C,1,["UK Garage","Speed Garage"],"Bassline");
+  g("Bassline",C,2,["UK Garage","Speed Garage","4×4 Garage","UK Dubstep"],"UK Jackin'");
+  g("UK Jackin'",C,3,["Bassline","House"],"Bass House");
+  g("Breakstep",C,1,["UK Garage","Breakbeat","Drum & Bass"],"UK Dubstep");
+  g("Future Garage",C,1,["UK Garage","Post-Dubstep","Ambient"],null);
+  g("UK Funky",C,1,["UK Garage","House","Broken Beat"],"Hard Drum");
+  g("Hard Drum",C,2,["UK Funky","Tribal House","Grime"],"Deconstructed Club");
+  g("J-Garage",C,1,["Speed Garage","Future Garage","J-Pop","J-Jersey Club"],null);
+  g("Grime",C,0,["2-step","Ragga Jungle","Dancehall","Hip-Hop"],["UK Dubstep","UK Drill","Instrumental Grime"]);
+  g("Instrumental Grime",C,1,["Grime","Dubstep","UK Garage","Jungle"],["Sinogrime","Eskibeat","Weightless Grime"]);
+  g("Sinogrime",C,2,["Instrumental Grime","East Asian Traditional Music"],null);
+  g("Rhythm & Grime",C,1,["Grime","Contemporary R&B"],null);
+  g("UK Dubstep",C,0,["2-step Garage","Dark Garage","Dub","Grime","Jungle"],["Deep Dubstep","UK Riddim","US Dubstep","Post-Dubstep"]);
+  g("Deep Dubstep",C,1,["UK Dubstep","Ambient"],["Purple Dubstep","Dungeon"]);
+  g("Purple Dubstep",C,2,["UK Dubstep","Wonky","Instrumental Grime"],"US Dubstep");
+  g("Dungeon",C,2,"UK Dubstep",null);
+  g("Post-Dubstep",C,1,["Dubstep","Future Garage","Alternative R&B","UK Funky"],null);
+  g("Wonky",C,0,["UK Dubstep","Grime","Beat Scene"],["Aquacrunk","Purple Dubstep","Post-Dubstep"]);
+  g("Aquacrunk",C,1,["Wonky","Glitch Hop","Purple Dubstep","Crunk"],["Bubblegum Bass","Brostep"]);
+  g("Bubblegum Bass",C,0,["UK Bass","Wonky","Grime","Dance-Pop","Post-Internet"],["Hyperpop","Deconstructed Club"]);
+  g("Leftfield Bass",C,0,["UK Dubstep","Deep Dubstep","Halftime"],"Global Bass");
+  g("Global Bass",C,1,["Leftfield Bass","Juke","Moombahton"],null);
+})();
+
+// ===== US BASS =====
+(function(){
+  const C="US Bass";
+  g("Riddim Dubstep",C,0,["UK Dubstep","UK Riddim","Reggae","Dancehall"],["Liquid Riddim","Briddim","Color Bass","Future Riddim"]);
+  g("Liquid Riddim",C,1,["Riddim Dubstep","Chillout"],["Future Riddim","Lofi Riddim"]);
+  g("Color Bass",C,1,["Riddim Dubstep","Future Riddim"],["Color House","Experimental Rawstyle"]);
+  g("Briddim",C,1,["Riddim Dubstep","US Dubstep"],"Viking Riddim");
+  g("US Dubstep/Brostep",C,0,"UK Dubstep",["Chillstep","Deathstep","Drumstep","Melodic Dubstep"]);
+  g("Melodic Dubstep",C,1,["US Dubstep","Chillstep"],["Melodic Bass","Trance-step","Epic Dubstep"]);
+  g("Melodic Bass",C,2,["Melodic Dubstep","Future Bass","Melodic Trap"],null);
+  g("Chillstep",C,1,["US Dubstep","Chill-out","Future Garage"],null);
+  g("Deathstep",C,1,["US Dubstep","Death Metal","Deathcore"],["Tearout (US)","Minatory"]);
+  g("Drumstep",C,1,["US Dubstep","Drum & Bass"],"Melodic Drumstep");
+  g("Metalstep",C,1,["US Dubstep","Metal"],null);
+  g("Future Riddim",C,1,["Riddim Dubstep","Liquid Riddim"],null);
+  g("Viking Riddim",C,2,["Briddim","Riddim Dubstep","Viking Metal"],null);
+  g("Melodic Riddim",C,1,["Riddim Dubstep","Melodic Dubstep"],null);
+  g("Lofi Riddim",C,2,["Liquid Riddim","Lofi","Color Bass"],null);
+})();
+
+// ===== HDM =====
+(function(){
+  const C="HDM";
+  g("Hardcore Techno",C,0,["Oldskool Rave Hardcore","Rave Techno","Industrial Music"],["Gabber","Free Tekno","Doomcore"]);
+  g("Gabber",C,1,"Hardcore Techno",["Happy Gabber","Nu-style Gabber","Old School Gabber"]);
+  g("Happy Gabber",C,2,["Gabber","Oldskool Rave Hardcore"],["Makina","Happy Hardcore"]);
+  g("Nu-style Gabber",C,2,"Gabber","Millennium Hardcore");
+  g("Millennium Hardcore",C,3,"Nu-style Gabber","Mainstream Hardcore");
+  g("Mainstream Hardcore",C,4,["Millennium Hardcore","Nu-style Gabber"],"Uptempo Hardcore");
+  g("Uptempo Hardcore",C,5,["Hardcore","Industrial Hardcore"],["Speedcore","Terrorcore"]);
+  g("Industrial Hardcore",C,0,["Gabber","Hardcore Techno","Industrial","Power Noise","Dark Ambient"],["Crossbreed","Noisecore (HDM)","Darkcore (HDM)"]);
+  g("Crossbreed",C,1,["Industrial Hardcore","Skullstep","Darkstep","Hardstep","Breakcore"],null);
+  g("Speedcore",C,0,["Gabber","Hardcore","Hardcore Techno"],["Splittercore","Extratone","Speed Bass"]);
+  g("Splittercore",C,1,["Speedcore","Noise"],"Suizidcore");
+  g("Extratone",C,1,"Speedcore",["Melodic Extratone","Supertone","Hypertone"]);
+  g("Speed Bass",C,1,["Speedcore","Breakcore","Glitch","Noise","Gabber"],["Spitbass","Slug 'N' Bass"]);
+  g("Free Tekno",C,0,"Techno",["Hardtek","Tribe","French Tek"]);
+  g("Tribe",C,1,"Free Tekno","Tribecore");
+  g("French Tek",C,1,["Free Tekno","House"],["Heretik","Tekclub"]);
+  g("Early Hardtek",C,1,["Free Tekno","Hardcore"],["Tribecore","Pumpcore","Modern Hardtek","Frenchcore"]);
+  g("Tribecore",C,2,["Tribe","Hardtek","Frenchcore"],"J-Tribecore");
+  g("Frenchcore",C,2,["Hardtek","French Tek","Hardcore"],["Early Frenchcore","Modern Frenchcore"]);
+  g("Modern Frenchcore",C,3,["Early Frenchcore","Modern Hardtek","Hardstyle","Mainstream Hardcore"],"Euphoric Frenchcore");
+  g("Modern Hardtek",C,2,["Hardtek","Frenchcore","UK Hardcore"],["Psytek","Raggatek","Jungletek","Happytek","Pumpcore"]);
+  g("Pumpcore",C,3,["Modern Hardtek","US Bass"],"Basscore");
+  g("Oldskool Rave Hardcore",C,0,["Rave","New Beat","Breaks","Acid House","Hip-Hop"],["Big Beat","Breakcore","Jungle","Drum & Bass"]);
+  g("Old School Happycore",C,1,["Breakbeat Hardcore","Hardcore Techno"],["UK Hardcore","Freeform Hardcore"]);
+  g("Trancecore",C,2,["Euro Trance","Happy Hardcore"],["Freeform","UK Hardcore","J-Trancecore"]);
+  g("Freeform Hardcore",C,3,["Euro Trance","NRG","Trancecore"],["FiNRG","J-Freeform"]);
+  g("UK Hardcore",C,3,["Happy Hardcore","Euro Trance","Hands Up"],"Powerstomp");
+  g("Hard Dance",C,0,["Rave Music","Techno","German Trance"],["Breakbeat Hardcore","Hardcore Techno","Hardstyle"]);
+  g("Bouncy Techno",C,1,["Hardcore Techno","Happy Gabber"],"Makina");
+  g("Makina",C,2,["Bakalao","Hardcore Techno","Happy Gabber","Eurodance","German Trance"],["UK Makina","J-Makina"]);
+  g("German Trance",C,1,["Rave","Trance"],["NRG","UK Hard House"]);
+  g("NRG",C,2,["UK Hard House","Hard Trance"],"Hard-NRG");
+  g("Jumpstyle",C,1,"UK Hard House",["Tekstyle","Freestyle","Dutch Jump"]);
+  g("Early Hardstyle",C,1,["Jumpstyle","Hard Trance"],"Nu Hardstyle");
+  g("Nu Hardstyle",C,2,"Early Hardstyle",["Euphoric Hardstyle","Rawstyle","Dubstyle"]);
+  g("Euphoric Hardstyle",C,3,"Nu Hardstyle","Euphoric Rawstyle");
+  g("Raw Hardstyle",C,3,["Nu Hardstyle","Hardcore","Early Hardstyle"],["Extra Rawstyle","Melodic Rawstyle"]);
+  g("Melodic Rawstyle",C,4,"Rawstyle","Rawphoric");
+  g("Extra Rawstyle",C,4,["Raw Hardstyle","Hardcore","Early Hardstyle"]);
+  g("J-core",C,0,["Nerdcore Techno","UK Hardcore","Trancecore"],["Hard Renaissance","J-Trancecore","J-Happy Hardcore","J-Speedcore"]);
+  g("Nerdcore Techno",C,1,["Techno","Hardcore","J-Pop","Speedcore","Gabber","House"],"J-core");
+  g("J-Trancecore",C,1,["J-core","UK Hardcore","UK Freeform","UK Trancecore","Uplifting Trance"],"Hard Renaissance");
+  g("Hard Renaissance",C,2,["J-core","J-Trancecore","J-Freeform"],null);
+  g("J-Happy Hardcore",C,1,["UK Hardcore","Happy Hardcore"],"Future-core");
+  g("Future-core",C,2,["J-Happy Hardcore","Future Bass","Jersey Club"],null);
+  g("J-Speedcore",C,1,["Speedcore","J-core"],null);
+})();
+
+// ===== HIP-HOP/TRAP/FUTURE BASS =====
+(function(){
+  const C="Hip-Hop/Trap/Future Bass";
+  g("Hip-Hop",C,0,["Reggae","Funk","Dozens Culture"],["Breakbeat","Boom Bap","Trip Hop","Trap"]);
+  g("Electro-Funk",C,1,["Old School Hip-Hop","Electronic Music","Funk"],"Electro");
+  g("Hardcore Hip-Hop",C,1,["Hip-Hop","Hard Rock","Hardcore Punk"],["Britcore","Horrorcore"]);
+  g("Boom Bap",C,1,"New School Hip-Hop",["G-Funk","Trip Hop","Lofi Hip-Hop"]);
+  g("G-Funk",C,2,["West Coast Hip-Hop","Boom Bap","Gangsta Rap"],null);
+  g("Trip Hop",C,1,["New School Hip-Hop","Boom Bap","Downtempo"],null);
+  g("Jazz Hip-Hop",C,1,["Boom Bap","Alternative Hip-Hop"],["Acid Jazz","Jazzy Hop"]);
+  g("Lofi Hip-Hop",C,1,"New School Hip-Hop",null);
+  g("Memphis Rap",C,1,["Southern Hip-Hop","Horrorcore","Gangsta Rap"],["Crunk","Trap","Drill","Plugg","Phonk"]);
+  g("Crunk",C,2,["Memphis Rap","Miami Bass","Bounce"],["Snap","Crunkcore","Trap"]);
+  g("Trap",C,2,["Crunk","Memphis Rap","Atlanta Rap"],["Drill","EDM Trap","Phonk","Plugg","Rage"]);
+  g("Drill",C,3,"Trap",["UK Drill","Bop","Brooklyn Drill","Bronx Drill"]);
+  g("UK Drill",C,4,"Drill",null);
+  g("Phonk",C,3,["Trap","Instrumental Hip-Hop","Memphis Rap"],"Drift Phonk");
+  g("Drift Phonk",C,4,["Phonk","Breakbeat","HDM"],"Drift House");
+  g("Plugg",C,3,"Trap",["PluggnB","Regalia","Dark Plugg","Hyper Plugg"]);
+  g("PluggnB",C,4,["Plugg","Contemporary R&B"],null);
+  g("Rage",C,3,["Trap","Future Bass","Plugg"],null);
+  g("EDM Trap",C,3,["Trap","Electronic Dance Music"],["Hybrid Trap","Hard Trap","Carnival","Heaven Trap","Festival Trap","Twerk"]);
+  g("Hybrid Trap",C,4,["EDM Trap","Brostep"],null);
+  g("Hard Trap",C,4,"EDM Trap","Raw Trap");
+  g("Melodic Trap",C,3,"Trap","Future Bass");
+  g("Future Bass",C,0,["Melodic Trap","EDM Trap","Electronic Dance Music"],["Future Beats","Future R&B","Kawaii Bass","Heaven Trap"]);
+  g("Kawaii Bass",C,1,["Future Bass","Dofflin","Chiptune","J-Pop"],null);
+  g("Future Beats",C,1,["Future Bass","Hip-Hop"],null);
+  g("Future R&B",C,1,["Future Bass","Alternative R&B"],null);
+})();
+
+// ===== DISCO/HI-NRG =====
+(function(){
+  const C="Disco/Hi-NRG";
+  g("Disco",C,0,["Funk","Philly Soul"],["Afro/Cosmic Disco","Euro-Disco","Boogie","Electro-Disco"]);
+  g("Euro-Disco",C,1,"Disco",["Eurobeat","Eurodance"]);
+  g("Boogie/Post-Disco",C,1,["Disco","Soul","Pop Funk","Contemporary R&B"],null);
+  g("Electro-Disco",C,1,"Disco",["Space Disco","Italo-Disco","Hi-NRG"]);
+  g("Space Disco",C,2,["Electro-Disco","French Disco","Progressive Electronic"],null);
+  g("Italo-Disco",C,2,["Electro-Disco","Euro-Disco"],["Spacesynth","Eurobeat"]);
+  g("Hi-NRG",C,2,"Electro-Disco",["Eurobeat","British Eurobeat"]);
+  g("Eurobeat",C,3,["British Eurobeat","Hi-NRG","Euro-Disco","Italo-Disco","Happy Hardcore"],null);
+  g("Eurodance",C,0,["Electronic Dance Music","Hi-NRG"],["Bubblegum Dance","Italo Dance","Euro Techno"]);
+  g("Italo Dance",C,1,["Eurodance","Mediterranean Progressive"],"Lento Violento");
+  g("Hands Up",C,0,["Euro Trance","Hi-NRG","Eurodance","Hard Dance"],null);
+})();
+
+// ===== AMBIENT =====
+(function(){
+  const C="Ambient";
+  g("Ambient",C,0,null,["Dark Ambient","Drone","Lowercase","Space Ambient","Progressive Electronic"]);
+  g("Dark Ambient",C,1,["Ambient","Post-Industrial"],["Black Ambient","Ritual Ambient","Isolationism"]);
+  g("Drone",C,1,["Ambient","Minimalism"],null);
+  g("Space Ambient",C,1,["Ambient","Berlin School"],null);
+  g("Psybient/Psychill",C,0,["Ambient","Electronica","Downtempo"],null);
+  g("Hauntology",C,0,["Ambient","Tape Music","Experimental"],["Hypnagogic Pop","Witch House"]);
+  g("Dungeon Synth",C,0,["Dark Ambient","Black Metal","Dark Wave"],["Winter Synth","Comfy Synth","Forest Synth","Keller Synth"]);
+})();
+
+// ===== INDIE =====
+(function(){
+  const C="Indie";
+  g("Synthwave",C,0,["French House","Techno","Disco","VGM","Cyber Punk Culture"],["Dreamwave","Darksynth","Cyber Synth","Outrun"]);
+  g("Darksynth",C,1,["Synthwave","Synth-pop"],["Horror Synth","Dark Clubbing"]);
+  g("Dreamwave",C,1,"Synthwave",null);
+  g("IDM",C,0,["Ambient Techno","Downtempo","Breakbeat","Jungle"],["Drill 'n' Bass","Flashcore"]);
+  g("Drill 'n' Bass",C,1,["IDM","Drum & Bass"],null);
+  g("Flashcore",C,1,["IDM","Speedcore"],null);
+  g("Electronica",C,0,null,["Funktronica","Folktronica","Indietronica","Jazztronica"]);
+  g("Folktronica",C,1,["Ethnic Electronica","IDM","Glitch"],["Lei Music","Botanica"]);
+  g("Indietronica",C,1,["Electronica","Alternative Dance","Indie Rock","Synth-pop"],"Chillwave");
+  g("Chillwave",C,2,["Indietronica","Hypnagogic Pop"],["Chillsynth","Vaporwave"]);
+  g("Downtempo",C,0,"Ambient",["Chillout","Trip Hop","Balearic Beat"]);
+  g("Chillout",C,1,["Downtempo","Ambient"],null);
+  g("Electro",C,0,["Krautrock","Electro-Funk"],"Detroit Electro");
+  g("Bit Music",C,0,"Electronic Music",["8-bit/Chiptune","FM Synthesis","Sequencer & Tracker"]);
+  g("Midtempo",C,0,["Melodic Bass","Melodic Dubstep"],null);
+  g("Lei Music",C,0,["Modern Classical","Folktronica","Ambient","Art Pop","Glitch","UK Bass","IDM"],null);
+  g("Botanica",C,0,["Soundscape","Ambient","Glitch","Folktronica"],null);
+})();
+
+// ===== POST-INTERNET =====
+(function(){
+  const C="Post-Internet";
+  g("Vaporwave",C,0,"Post-Internet",["Dreampunk","Future Funk","Slushwave","Mallsoft","Vaportrap","Hardvapour"]);
+  g("Future Funk",C,1,["Vaporwave","Funk","House"],null);
+  g("Mallsoft",C,1,"Vaporwave",null);
+  g("Slushwave",C,1,["Vaporwave","Hypnagogic Drift"],null);
+  g("Dreampunk",C,1,["Vaporwave","Ambient","Futurism"],null);
+  g("Seapunk",C,0,["Post-Internet","Vaporwave","Breakbeat"],["Icepunk","Ocean Grunge"]);
+  g("HexD",C,0,["Vapor","Hip-Hop","Glitch","Noise","EDM","Ambient"],["Xpiritualism Jumpstyle","Sextrance","Krushclub","Surge"]);
+  g("Nightcore",C,0,"Plunderphonics",["Post-Nightcore","Froggycore"]);
+  g("Hyper Pop",C,0,["Electro Pop","Bass Music","Bubblegum Bass","Trap","Glitch"],["Glitchcore","Dariacore","Sigilkore","Digicore"]);
+  g("Wave",C,0,["Electronic Music","Grime","Future Garage","Trap","Hip-Hop"],"Hardwave");
+  g("Hardwave",C,1,"Wave","Neo Grime");
+  g("Neo Grime",C,2,["Hardwave","Instrumental Grime"],"Hyper Trance");
+  g("NEO-Trance",C,0,["Ambient Trance","Euro Trance","Wave Music","HI-NRG","HDM","UK Dance"],["Harlecore","Hyper Trance"]);
+  g("Hyper Trance",C,1,["NEO-Trance","Hard Trance","Gabber","Euro Dance","Hardwave","Atmospheric Breakcore","Jungle"],null);
+  g("Deconstructed Club",C,0,["Trap","Ballroom Club","Jersey Club","Grime","Hard Drum","Post-Industrial"],["Hyper Pop","Reggaeton"]);
+  g("Eco Grime",C,0,["Eco-Futurism","Ambient","IDM","Instrumental Grime"],null);
+  g("Melodic Hard Techno (Internet)",C,0,["Techno","Trance","Euro Dance","Nu-NRG"],null);
+})();
+
+// ===== INDUSTRIAL =====
+(function(){
+  const C="Industrial Music";
+  g("Industrial (1st Wave)",C,0,"Industrial Music",["Power Electronics","Death Industrial"]);
+  g("Power Electronics",C,1,["Industrial","Noise"],"Death Industrial");
+  g("Death Industrial",C,2,["Power Electronics","Dark Ambient"],null);
+  g("Post-Industrial",C,0,"Industrial Music",["Industrial Rock","Industrial Metal","EBM","Dark Ambient","Deconstructed Club"]);
+  g("EBM",C,1,["Electronic Dance Music","Post-Industrial"],["New Beat","Futurepop","Electro-Industrial","Old School EBM"]);
+  g("New Beat",C,2,["EBM","Belgian New Beat"],null);
+  g("Electro-Industrial",C,2,["EBM","Industrial"],["Dark Electro","Elektro"]);
+  g("Dark Electro",C,3,["EBM","Electro-Industrial"],"Aggrotech");
+  g("Aggrotech",C,4,["Dark Electro","Techno"],null);
+  g("Futurepop",C,2,["EBM","Synth-pop","Trance"],null);
+  g("Power Noise",C,1,["Noise","Post-Industrial"],null);
+  g("Martial Industrial",C,1,["Post-Industrial","Neoclassical Darkwave","Dark Ambient","Neofolk"],null);
+  g("Witch House",C,0,["Post-Industrial","Chopped & Screwed","Shoegaze","Darkwave"],["Drag","Witch House Rap"]);
+  g("Industrial Techno",C,0,["Dark Techno","Dub Techno","Minimal Techno","Post-Industrial"],null);
+})();
+
+// ===== FUSION/ETHNIC =====
+(function(){
+  const C="Fusion/Ethnic";
+  g("Alternative Dance",C,0,["Post-Disco","Electro","Alternative Rock"],["Baggy","Grebo"]);
+  g("Electro Rock",C,0,["Rock","Electronics"],"Dance Rock");
+  g("Krautrock",C,0,["Progressive Rock","Noise","Ambient","New Age"],["Berlin School","Düsseldorf School"]);
+  g("Berlin School",C,1,["Krautrock","Progressive Electronics"],["Trance","Electronica"]);
+  g("Digital Hardcore",C,0,["Hardcore Punk","Hardcore","Techno","Breakbeat"],["Cybergrind","Breakcore"]);
+  g("New Wave",C,0,["Post Punk","Disco"],["Dark Wave","Minimal Wave","Synth Pop"]);
+  g("Dark Wave",C,1,["New Wave","Coldwave"],["Ethereal Wave","Neoclassical Dark Wave","Electro-Darkwave"]);
+  g("Synth Pop",C,1,["Pop","New Wave","Minimal Wave"],["Electro Pop","EBM"]);
+  g("Electroclash",C,1,["Pop","Synth Pop","Electro House"],"Electro Pop");
+  g("Electro Pop",C,2,["Electroclash","EDM"],"Hyper Pop");
+  g("Dance-Pop",C,0,["EDM","Synth Pop","Electro Pop"],["Disco Pop","Freestyle"]);
+  g("New Jack Swing",C,0,["Hardcore Hip-Hop","Contemporary R&B","Dance Pop","Funk","Boom Bap"],null);
+  g("City Pop",C,0,["New Music","Synth Funk","Post Disco","Jazz Fusion","Synth Pop","Hi-NRG"],["J-Pop","Vaporwave","Future Funk"]);
+  g("J-Pop",C,1,["Idol Kāyo","Synth Pop","Electro Pop","Dance Pop"],"Nocturnal Scene");
+  g("K-Pop",C,0,["Korea Folk","Hip-Hop","Eurodance","EDM","Bass Music"],null);
+  g("Dub",C,0,["Reggae","Electronic Music"],["Dub Reggae","Ambient Dub","Psydub","Dubstep","Dub Techno"]);
+  g("Reggaeton",C,0,["Reggae","Electronic Dance Music","Dancehall"],"Moombahton");
+  g("Dancehall",C,0,["Deejay","Roots Reggae","Pop Music"],["Dembow","Yardcore","Reggaeton"]);
+  g("Soca",C,0,["Electronic Dance Music","Caribbean Music"],["Groove Soca","Power Soca"]);
+  g("Afrobeat",C,0,["Breakbeat","Afro Music","Hip-Hop"],["Amapiano","Afropiano","Kidandali"]);
+  g("Electro Swing",C,0,["Electro Jazz","Swing","Jazz House"],null);
+  g("Electro Soul",C,0,["Soul","Electro","Synth Pop"],"Future Soul");
+  g("Funk Carioca",C,0,["Hip Hop","Gangsta Rap","Dance Pop","Miami Bass"],["Funk Melody"]);
+})();
+
+// ===== RENDER =====
+nodesArr.forEach(n => {
+  n.size = Math.max(6, 22 - n.level * 3);
+  n.font = { size: Math.max(8, 16 - n.level * 2), color: '#ddd', face: 'Microsoft YaHei' };
+  if (n.level === 0) n.font.size = 15;
+  n.borderWidth = n.level <= 1 ? 2 : 1;
+  n.shape = 'dot';
+});
+
+edgesArr.forEach(e => {
+  if (e.type === "up") {
+    e.color = { color: '#ff6b6b88', highlight: '#ff6b6b' };
+    e.arrows = { to: { enabled: true, scaleFactor: 0.5 } };
+    e.dashes = true;
+  } else {
+    e.color = { color: '#51cf6688', highlight: '#51cf66' };
+    e.arrows = { to: { enabled: true, scaleFactor: 0.5 } };
+  }
+});
+
+const container = document.getElementById('mindmap');
+const data = { nodes: new vis.DataSet(nodesArr), edges: new vis.DataSet(edgesArr) };
+const options = {
+  physics: false,
+  layout: {
+    hierarchical: {
+      enabled: true,
+      direction: 'LR',
+      sortMethod: 'directed',
+      levelSeparation: 180,
+      nodeSpacing: 60,
+      treeSpacing: 30
+    }
+  },
+  interaction: { hover: true, zoomView: true, dragView: true, navigationButtons: false },
+  edges: { smooth: { type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.4 } }
+};
+
+const network = new vis.Network(container, data, options);
+
+// Click handler
+network.on('click', function(params) {
+  if (params.nodes.length > 0) {
+    const nid = params.nodes[0];
+    const node = nodesArr.find(n => n.id === nid);
+    const d = descDB[node.label];
+    const panel = document.getElementById('panel');
+
+    const ups = edgesArr.filter(e => e.to === nid && e.type === 'up').map(e => nodesArr.find(n => n.id === e.from)?.label || '');
+    const downs = edgesArr.filter(e => e.from === nid && e.type === 'down').map(e => nodesArr.find(n => n.id === e.to)?.label || '');
+
+    let html = `<h2>${node.label}</h2>`;
+    html += `<span class="chapter-tag" style="background:${chapterColors[node.chapter]}22;color:${chapterColors[node.chapter]};border:1px solid ${chapterColors[node.chapter]}88">${node.chapter}</span>`;
+
+    if (d && d.desc) {
+      html += `<div class="desc">${d.desc}</div>`;
+    } else {
+      html += `<div class="desc" style="color:#666;">暂无详细介绍</div>`;
+    }
+
+    if (ups.length > 0 || downs.length > 0) {
+      html += `<div class="rel-section">`;
+      if (ups.length > 0) html += `<h4 style="color:#ff6b6b">⬆ 上位（受其影响/来自）</h4>${ups.map(u => `<span class="rel-tag up">${u}</span>`).join(' ')}`;
+      if (downs.length > 0) html += `<h4 style="color:#51cf66;margin-top:4px">⬇ 下位（派生/衍生出）</h4>${downs.map(d => `<span class="rel-tag down">${d}</span>`).join(' ')}`;
+      html += `</div>`;
+    }
+
+    panel.innerHTML = html;
+  }
+});
+
+// Search
+function searchNode() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  if (!q) { network.fit({ animation: true }); return; }
+  const found = nodesArr.filter(n => n.label.toLowerCase().includes(q));
+  if (found.length > 0) {
+    network.selectNodes([found[0].id]);
+    network.focus(found[0].id, { scale: 1.5, animation: true });
+  }
+}
+
+// Chapter filters
+const topbar = document.getElementById('topbar');
+Object.keys(chapterColors).forEach(ch => {
+  const btn = document.createElement('button');
+  btn.textContent = ch;
+  btn.style.borderLeft = `3px solid ${chapterColors[ch]}`;
+  btn.onclick = function() {
+    this.classList.toggle('active');
+    updateFilter();
+  };
+  topbar.insertBefore(btn, topbar.lastChild);
+});
+
+function resetAll() {
+  document.querySelectorAll('#topbar button').forEach(b => b.classList.remove('active'));
+  updateFilter();
+}
+
+function updateFilter() {
+  const active = [...document.querySelectorAll('#topbar button.active')].map(b => b.textContent);
+  if (active.length === 0) {
+    nodesArr.forEach(n => n.hidden = false);
+    edgesArr.forEach(e => e.hidden = false);
+  } else {
+    nodesArr.forEach(n => { n.hidden = !active.includes(n.chapter); });
+    edgesArr.forEach(e => {
+      const from = nodesArr.find(n => n.id === e.from);
+      const to = nodesArr.find(n => n.id === e.to);
+      e.hidden = !active.includes(from?.chapter) && !active.includes(to?.chapter);
+    });
+  }
+  data.nodes.update(nodesArr);
+  data.edges.update(edgesArr);
+  setTimeout(() => network.fit({ animation: true }), 300);
+}
+
+setTimeout(() => network.fit({ animation: false }), 400);
+</script>
+</body>
+</html>
