@@ -19,6 +19,7 @@
         color: #e2e8f0;
         overflow: hidden;
         height: 100vh;
+        height: 100dvh;
       }
       #topbar {
         position: sticky;
@@ -77,6 +78,7 @@
       #wrapper {
         display: flex;
         height: calc(100vh - 48px - 26px);
+        height: calc(100dvh - 48px - 26px);
         overflow: hidden;
       }
       #container {
@@ -131,11 +133,6 @@
       .scroll-btn.right {
         right: 10px;
       }
-      @media (max-width: 768px) {
-        .scroll-btn {
-          display: none;
-        }
-      }
       .col {
         flex: 0 0 auto;
         min-width: 200px;
@@ -143,10 +140,11 @@
         display: flex;
         flex-direction: column;
         border-radius: 10px;
-        overflow: hidden;
+        overflow: clip;
         background: #0f172a44;
         border: 1px solid #1e293b;
         transition: border-color 0.2s;
+        min-height: 0;
       }
       .col:hover {
         border-color: #334155;
@@ -166,11 +164,13 @@
       }
       .col-body {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
         padding: 4px 0;
         scrollbar-width: thin;
         scrollbar-color: #334155 transparent;
+        -webkit-overflow-scrolling: touch;
       }
       .col-body::-webkit-scrollbar {
         width: 4px;
@@ -399,10 +399,107 @@
           float: none;
         }
       }
+      @media (max-width: 768px) {
+        .scroll-btn {
+          display: none;
+        }
+        body {
+          overflow: hidden;
+          position: fixed;
+          width: 100%;
+        }
+        #topbar {
+          padding: 6px 8px;
+          gap: 4px;
+          min-height: 42px;
+        }
+        #topbar input {
+          font-size: 12px;
+          padding: 5px 10px;
+          min-width: 100px;
+          max-width: 180px;
+        }
+        #topbar button {
+          font-size: 10px;
+          padding: 4px 7px;
+        }
+        #wrapper {
+          height: calc(100dvh - 42px - 22px);
+        }
+        #container {
+          padding: 6px;
+          gap: 6px;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+        }
+        .col {
+          min-width: 200px;
+          max-width: 280px;
+          scroll-snap-align: start;
+        }
+        .col-head {
+          font-size: 12px;
+          padding: 8px 10px;
+          position: sticky;
+          top: 0;
+          z-index: 2;
+        }
+        .col-body {
+          -webkit-overflow-scrolling: touch;
+        }
+        .node {
+          font-size: 11px;
+          padding: 6px 8px;
+          margin: 2px 4px;
+          line-height: 1.6;
+        }
+        .node.l0 {
+          font-size: 12px;
+          padding: 7px 10px;
+        }
+        .node.l1 {
+          padding-left: 20px;
+        }
+        .node.l2 {
+          padding-left: 32px;
+          font-size: 10px;
+        }
+        .node.l3 {
+          padding-left: 44px;
+          font-size: 10px;
+        }
+        .node.l4 {
+          padding-left: 56px;
+          font-size: 9px;
+        }
+        #detail {
+          max-height: 70vh;
+          max-height: 70dvh;
+          padding: 14px;
+          bottom: 22px;
+          border-radius: 16px 16px 0 0;
+        }
+        #detail h2 {
+          font-size: 16px;
+        }
+        #detail .desc {
+          font-size: 12px;
+          line-height: 1.7;
+        }
+        #detail .close-btn {
+          font-size: 24px;
+          padding: 6px 10px;
+        }
+        #detail .tag {
+          font-size: 10px;
+          padding: 4px 8px;
+          margin: 3px 4px 3px 0;
+        }
+      }
       @media (max-width: 480px) {
         .col {
           min-width: 170px;
-          max-width: 260px;
+          max-width: 250px;
         }
         .col-head {
           font-size: 11px;
@@ -410,20 +507,49 @@
         }
         .node {
           font-size: 10px;
-          padding: 3px 6px;
+          padding: 5px 7px;
         }
         .node.l0 {
           font-size: 11px;
+          padding: 6px 8px;
+        }
+        .node.l1 {
+          font-size: 10px;
+          padding-left: 18px;
+        }
+        .node.l2 {
+          padding-left: 28px;
+        }
+        .node.l3 {
+          padding-left: 38px;
+        }
+        .node.l4 {
+          padding-left: 48px;
         }
         #detail {
-          max-height: 65vh;
-          padding: 12px;
+          max-height: 75vh;
+          max-height: 75dvh;
+          padding: 10px 12px;
         }
         #detail h2 {
-          font-size: 15px;
+          font-size: 14px;
         }
         #detail .desc {
           font-size: 11px;
+        }
+        #detail .aka {
+          font-size: 10px;
+        }
+        #detail .rel-title {
+          font-size: 10px;
+        }
+        #detail .ex-item {
+          font-size: 9px;
+        }
+        .node .dot {
+          width: 5px;
+          height: 5px;
+          margin-right: 4px;
         }
       }
     </style>
@@ -455,6 +581,23 @@
     <button class="scroll-btn right" onclick="scrollCols(400)" title="向右滚动">
       ▶
     </button>
+    <div id="swipe-hint" style="
+      display:none;
+      position:fixed;
+      bottom:80px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:20;
+      background:#1e293bee;
+      backdrop-filter:blur(8px);
+      color:#94a3b8;
+      font-size:11px;
+      padding:6px 16px;
+      border-radius:20px;
+      border:1px solid #334155;
+      pointer-events:none;
+      transition:opacity 0.5s;
+    ">👈 左右滑动浏览篇章 👉</div>
     <div id="wrapper">
       <div id="container"></div>
       <div id="detail">
@@ -13187,6 +13330,14 @@
         Object.keys(GENRES).length +
         " 介绍";
 
+      function closeDetail() {
+        document.getElementById("detail").classList.remove("show");
+        document
+          .querySelectorAll(".node.sel")
+          .forEach((x) => x.classList.remove("sel"));
+        document.body.style.overflow = "";
+      }
+
       function showDetail(name, chapter) {
         const g = GENRES[name.toLowerCase()];
         const inner = document.getElementById("detail-inner");
@@ -13211,6 +13362,7 @@
           h += '<div class="no-desc">暂无详细介绍</div>';
           inner.innerHTML = h;
           document.getElementById("detail").classList.add("show");
+          document.body.style.overflow = "hidden";
           return;
         }
 
@@ -13250,13 +13402,8 @@
 
         inner.innerHTML = h;
         document.getElementById("detail").classList.add("show");
-      }
-
-      function closeDetail() {
-        document.getElementById("detail").classList.remove("show");
-        document
-          .querySelectorAll(".node.sel")
-          .forEach((x) => x.classList.remove("sel"));
+        document.body.style.overflow = "hidden";
+        document.getElementById("detail").scrollTop = 0;
       }
 
       function scrollCols(amount) {
@@ -13272,14 +13419,25 @@
           .forEach((x) => x.classList.remove("sel"));
         if (!q) return;
 
+        let found = null;
         for (let el of allNodes) {
           if (el.dataset.name.toLowerCase().includes(q)) {
-            el.classList.add("sel");
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-            showDetail(el.dataset.name, el.dataset.chapter);
-            return;
+            found = el;
+            break;
           }
         }
+        if (!found) return;
+        found.classList.add("sel");
+        // scroll the column into view horizontally
+        const col = found.closest(".col");
+        if (col) {
+          col.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+        // then scroll the node into view vertically within its column body
+        setTimeout(function () {
+          found.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 150);
+        showDetail(found.dataset.name, found.dataset.chapter);
       }
 
       let descFilterOn = true;
@@ -13342,6 +13500,28 @@
             closeDetail();
           }
         });
+
+      // Mobile swipe hint
+      (function () {
+        var hint = document.getElementById("swipe-hint");
+        var container = document.getElementById("container");
+        var isMobile = window.matchMedia("(max-width: 768px)").matches;
+        if (!isMobile) return;
+        hint.style.display = "block";
+        var hinted = false;
+        function hideHint() {
+          if (!hinted) {
+            hinted = true;
+            hint.style.opacity = "0";
+            setTimeout(function () { hint.style.display = "none"; }, 500);
+          }
+        }
+        container.addEventListener("scroll", hideHint, { once: true });
+        container.addEventListener("touchstart", hideHint, { once: true });
+        setTimeout(function () {
+          if (!hinted) { hint.style.opacity = "0"; setTimeout(function () { hint.style.display = "none"; }, 500); }
+        }, 5000);
+      })();
 
       applyFilter();
       console.log(
