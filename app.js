@@ -1,4 +1,9 @@
-const CC = {};
+if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
+        document.getElementById("container").innerHTML =
+          '<div class="no-desc">数据加载失败，请刷新重试</div>';
+        throw new Error("DATA missing");
+      }
+      const CC = {};
       DATA.chapters.forEach((ch) => {
         CC[ch.name] = ch.color;
       });
@@ -19,17 +24,24 @@ const CC = {};
       const NORM_KEYS = new Map();
       Object.keys(GENRES).forEach((k) => {
         const n = normKey(k);
-        if (!NORM_KEYS.has(n)) NORM_KEYS.set(n, k);
+        if (!NORM_KEYS.has(n)) NORM_KEYS.set(n, []);
+        NORM_KEYS.get(n).push(k);
       });
+      function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c;
+        });
+      }
       function findGenre(label) {
         if (!label) return null;
         const raw = String(label).toLowerCase();
         if (GENRES[raw]) return GENRES[raw];
         const n1 = normKey(label);
-        if (NORM_KEYS.has(n1)) return GENRES[NORM_KEYS.get(n1)];
+        const exact = NORM_KEYS.get(n1);
+        if (exact) return GENRES[exact[0]];
         const n2 = n1.replace(/ /g, "");
-        for (const [n, k] of NORM_KEYS) {
-          if (n.replace(/ /g, "") === n2) return GENRES[k];
+        for (const [n, ks] of NORM_KEYS) {
+          if (n.replace(/ /g, "") === n2) return GENRES[ks[0]];
         }
         const cands = Object.keys(GENRES).filter(
           (k) => normKey(k).includes(n1) && normKey(k) !== n1,
@@ -60,14 +72,14 @@ const CC = {};
         }
         trees.forEach(countNodes);
         head.innerHTML =
-          ch.name +
+          esc(ch.name) +
           ' <span style="font-size:10px;opacity:.7">(' +
           nodeCount +
           ")</span>";
-        head.onclick = function () {
+        head.addEventListener("click", function () {
           const body = col.querySelector(".col-body");
           body.style.display = body.style.display === "none" ? "" : "none";
-        };
+        });
         col.appendChild(head);
 
         const body = document.createElement("div");
@@ -83,19 +95,20 @@ const CC = {};
               '<span class="dot" style="background:' +
               ch.color +
               '"></span>' +
-              n.label;
+              esc(n.label);
             el.dataset.name = n.label;
             el.dataset.chapter = ch.name;
             el.dataset.hasDesc = hasDesc ? "1" : "0";
             el.dataset.level = level;
-            el.onclick = function (e) {
+            el._norm = normClean(n.label);
+            el.addEventListener("click", function (e) {
               e.stopPropagation();
               document
                 .querySelectorAll(".node.sel")
                 .forEach((x) => x.classList.remove("sel"));
               el.classList.add("sel");
               showDetail(n.label, ch.name);
-            };
+            });
             body.appendChild(el);
             allNodes.push(el);
             if (n.children) renderTree(n.children, level + 1);
@@ -143,20 +156,20 @@ const CC = {};
         const g = findGenre(name);
         const inner = document.getElementById("detail-inner");
         document.getElementById("dim").classList.add("show");
-        let h = "<h2>" + name + "</h2>";
+        let h = '<h2 id="detail-title">' + esc(name) + "</h2>";
         h +=
           '<span class="chap" style="background:' +
           (CC[chapter] || "#888") +
           "22;color:" +
           (CC[chapter] || "#888") +
           '">' +
-          (chapter || "") +
+          esc(chapter || "") +
           "</span>";
 
         if (g && g.chapter && g.chapter !== chapter) {
           h +=
             ' <span class="xref-note">（详细介绍来自「' +
-            g.chapter +
+            esc(g.chapter) +
             "」篇章）</span>";
         }
 
@@ -168,8 +181,8 @@ const CC = {};
           return;
         }
 
-        if (g.aka) h += '<div class="aka">A.K.A. ' + g.aka + "</div>";
-        h += '<div class="desc">' + g.desc + "</div>";
+        if (g.aka) h += '<div class="aka">A.K.A. ' + esc(g.aka) + "</div>";
+        h += '<div class="desc">' + esc(g.desc) + "</div>";
 
         if (g.ups.length || g.downs.length || g.related) {
           h += '<div class="rels">';
@@ -177,20 +190,20 @@ const CC = {};
             h +=
               '<div class="rel-title" style="color:#f87171">上位（影响/衍生来源）</div>';
             g.ups.forEach(
-              (u) => (h += '<span class="tag up">' + u + "</span>"),
+              (u) => (h += '<span class="tag up">' + esc(u) + "</span>"),
             );
           }
           if (g.downs.length) {
             h +=
               '<div class="rel-title" style="color:#4ade80;margin-top:6px">下位（派生子风格）</div>';
             g.downs.forEach(
-              (d) => (h += '<span class="tag down">' + d + "</span>"),
+              (d) => (h += '<span class="tag down">' + esc(d) + "</span>"),
             );
           }
           if (g.related) {
             h +=
               '<div class="rel-title" style="color:#fb923c;margin-top:6px">≈ Related To</div>';
-            h += '<span class="tag rel">' + g.related + "</span>";
+            h += '<span class="tag rel">' + esc(g.related) + "</span>";
           }
           h += "</div>";
         }
@@ -198,7 +211,7 @@ const CC = {};
         if (g.examples && g.examples.length) {
           h += '<div class="ex-title">例曲</div>';
           g.examples.forEach(
-            (ex) => (h += '<div class="ex-item">' + ex + "</div>"),
+            (ex) => (h += '<div class="ex-item">' + esc(ex) + "</div>"),
           );
         }
 
@@ -214,7 +227,13 @@ const CC = {};
           .scrollBy({ left: amount, behavior: "smooth" });
       }
 
+      function scrollColsPage(dir) {
+        const c = document.getElementById("container");
+        scrollCols(dir * Math.max(240, Math.round(c.clientWidth * 0.8)));
+      }
+
       let searchMatches = [];
+      let searchTimer = null;
 
       function normClean(s) {
         const keep = [];
@@ -285,8 +304,37 @@ const CC = {};
         return null;
       }
 
+      let srActive = -1;
+      function clearActiveOption() {
+        srActive = -1;
+        const searchEl = document.getElementById("search");
+        if (searchEl) searchEl.removeAttribute("aria-activedescendant");
+      }
+      function setActiveOption(i) {
+        const box = document.getElementById("search-results");
+        const items = box.querySelectorAll(".sr-item");
+        const searchEl = document.getElementById("search");
+        if (!items.length) {
+          clearActiveOption();
+          return;
+        }
+        if (i < 0) i = items.length - 1;
+        if (i >= items.length) i = 0;
+        srActive = i;
+        items.forEach(function (it, k) {
+          it.setAttribute("aria-selected", k === i ? "true" : "false");
+        });
+        const id = items[i].id;
+        if (searchEl && id) searchEl.setAttribute("aria-activedescendant", id);
+        if (items[i].scrollIntoView) {
+          items[i].scrollIntoView({ block: "nearest" });
+        }
+      }
+
       function doSearch(q) {
         q = q.toLowerCase().trim();
+        const searchEl = document.getElementById("search");
+        clearActiveOption();
         document
           .querySelectorAll(".node.sel")
           .forEach((x) => x.classList.remove("sel"));
@@ -294,14 +342,14 @@ const CC = {};
         if (!q) {
           box.style.display = "none";
           box.innerHTML = "";
+          if (searchEl) searchEl.setAttribute("aria-expanded", "false");
           return;
         }
         const qc = normClean(q);
         searchMatches = [];
         const scored = [];
         for (let el of allNodes) {
-          const name = el.dataset.name;
-          const nc = normClean(name);
+          const nc = el._norm || normClean(el.dataset.name);
           const r = fuzzySearch(qc, nc);
           if (r) scored.push({ el, r, nc });
         }
@@ -309,7 +357,8 @@ const CC = {};
         if (!scored.length) {
           box.style.display = "block";
           box.innerHTML =
-            '<div class="sr-empty">没有找到与「' + q + '」相关的曲风</div>';
+            '<div class="sr-empty">没有找到与「' + esc(q) + '」相关的曲风</div>';
+          if (searchEl) searchEl.setAttribute("aria-expanded", "true");
           return;
         }
         const exact = scored.filter((x) => x.r.type === "contains").slice(0, 40);
@@ -330,24 +379,27 @@ const CC = {};
           const oriSet = new Set(ori);
           let hl = "";
           for (let k = 0; k < name.length; k++) {
-            hl += oriSet.has(k) ? "<mark>" + name[k] + "</mark>" : name[k];
+            hl += oriSet.has(k) ? "<mark>" + esc(name[k]) + "</mark>" : esc(name[k]);
           }
           return (
-            '<div class="sr-item" onclick="event.stopPropagation();pickSearch(' +
+            '<div class="sr-item" role="option" id="sr-opt-' +
             i +
-            ')"><span class="sr-name">' +
+            '" aria-selected="false" data-idx="' +
+            i +
+            '"><span class="sr-name">' +
             hl +
             '</span><span class="sr-chap">' +
-            el.dataset.chapter +
+            esc(el.dataset.chapter) +
             "</span></div>"
           );
         }
         let h = "";
-        exact.forEach((x, i) => (h += itemHtml(x, i)));
+        let idx = 0;
+        exact.forEach((x) => (h += itemHtml(x, idx++)));
         if (exact.length && fuzzy.length) {
           h += '<div class="sr-divider">猜你想搜</div>';
         }
-        fuzzy.forEach((x, i) => (h += itemHtml(x, exact.length + i)));
+        fuzzy.forEach((x) => (h += itemHtml(x, idx++)));
         if (searchMatches.length < scored.length) {
           h +=
             '<div class="sr-empty">… 还有 ' +
@@ -356,6 +408,7 @@ const CC = {};
         }
         box.innerHTML = h;
         box.style.display = "block";
+        if (searchEl) searchEl.setAttribute("aria-expanded", "true");
       }
 
       function pickSearch(i) {
@@ -367,36 +420,77 @@ const CC = {};
         el.classList.add("sel");
         const col = el.closest(".col");
         if (col) {
+          const cbody = col.querySelector(".col-body");
+          if (cbody && cbody.style.display === "none") cbody.style.display = "";
           col.scrollIntoView({
             behavior: "smooth",
             block: "nearest",
             inline: "center",
           });
         }
-        setTimeout(function () {
+        requestAnimationFrame(function () {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 150);
+        });
         showDetail(el.dataset.name, el.dataset.chapter);
         const box = document.getElementById("search-results");
         box.style.display = "none";
         box.innerHTML = "";
+        const searchEl = document.getElementById("search");
+        if (searchEl) searchEl.setAttribute("aria-expanded", "false");
+        clearActiveOption();
       }
 
 
+      let aboutLastFocus = null;
+      let groupLastFocus = null;
+      const FOCUS_TRAP = "#topbar, .scroll-btn, #container, #swipe-hint";
+      function trapFocus(active) {
+        document.querySelectorAll(FOCUS_TRAP).forEach((el) => {
+          if (active) el.setAttribute("inert", "");
+          else el.removeAttribute("inert");
+        });
+      }
       function openAbout() {
+        aboutLastFocus = document.activeElement;
+        trapFocus(true);
         document.getElementById("about-mask").classList.add("show");
         document.getElementById("about-dialog").classList.add("show");
+        document.getElementById("about-dialog").focus({ preventScroll: true });
       }
 
       function closeAbout() {
+        const wasOpen = document
+          .getElementById("about-dialog")
+          .classList.contains("show");
         document.getElementById("about-mask").classList.remove("show");
         document.getElementById("about-dialog").classList.remove("show");
+        trapFocus(false);
+        if (wasOpen && aboutLastFocus && aboutLastFocus.focus) {
+          aboutLastFocus.focus();
+        }
       }
 
       let giscusLoaded = false;
       let giscusReady = false;
+      let giscusErrorShown = false;
       let giscusTimeout = null;
+      let giscusObs = null;
+      function groupLoadingError() {
+        giscusErrorShown = true;
+        giscusTimeout = null;
+        if (giscusObs) {
+          giscusObs.disconnect();
+          giscusObs = null;
+        }
+        const ld = document.getElementById("group-loading");
+        if (!ld) return;
+        const spin = ld.querySelector(".group-spinner");
+        if (spin) spin.style.display = "none";
+        const txt = ld.querySelector("span");
+        if (txt) txt.textContent = "评论区暂时无法加载，请检查网络后重试";
+      }
       function hideGroupLoading() {
+        if (giscusErrorShown) return;
         giscusReady = true;
         const ld = document.getElementById("group-loading");
         if (ld) ld.style.display = "none";
@@ -407,34 +501,60 @@ const CC = {};
       }
       function showGroupLoading() {
         const ld = document.getElementById("group-loading");
-        if (ld && !giscusReady) ld.style.display = "flex";
+        if (ld && !giscusReady && !giscusErrorShown) ld.style.display = "flex";
       }
-      document.addEventListener(
-        "load",
-        function (e) {
-          if (
-            e.target &&
-            e.target.tagName === "IFRAME" &&
-            /giscus\.app/.test(e.target.src || "")
-          ) {
-            hideGroupLoading();
+      function watchGiscusFrame() {
+        const frame = document.querySelector(".giscus-frame");
+        if (frame) {
+          frame.addEventListener("load", hideGroupLoading);
+          return;
+        }
+        if (typeof MutationObserver === "undefined" || giscusObs) return;
+        giscusObs = new MutationObserver(function () {
+          const f = document.querySelector(".giscus-frame");
+          if (f) {
+            f.addEventListener("load", hideGroupLoading);
+            giscusObs.disconnect();
+            giscusObs = null;
           }
-        },
-        true,
-      );
+        });
+        giscusObs.observe(document.body, { childList: true, subtree: true });
+      }
       window.addEventListener("message", function (e) {
-        if (e.data && e.data.giscus) hideGroupLoading();
+        if (e.origin !== "https://giscus.app") return;
+        const data = e.data && e.data.giscus;
+        if (!data) return;
+        if (data.signOut) {
+          giscusReady = false;
+          giscusErrorShown = false;
+          return;
+        }
+        if (data.error) {
+          if (/discussion not found/i.test(data.error)) {
+            hideGroupLoading();
+          } else {
+            console.warn("[giscus] error:", data.error);
+            groupLoadingError();
+          }
+          return;
+        }
+        hideGroupLoading();
       });
       function openGroup() {
+        groupLastFocus = document.activeElement;
+        trapFocus(true);
         document.getElementById("group-mask").classList.add("show");
         document.getElementById("group-dialog").classList.add("show");
+        document.getElementById("group-dialog").focus({ preventScroll: true });
         showGroupLoading();
-        if (!giscusTimeout) giscusTimeout = setTimeout(hideGroupLoading, 15000);
+        watchGiscusFrame();
+        if (!giscusTimeout && !giscusReady && !giscusErrorShown) {
+          giscusTimeout = setTimeout(groupLoadingError, 15000);
+        }
         if (!giscusLoaded) {
           giscusLoaded = true;
           const s = document.createElement("script");
           s.src = "https://giscus.app/client.js";
-          s.crossOrigin = "anonymous";
           s.async = true;
           const attrs = {
             repo: "YeisuQwQ/music_genre",
@@ -455,14 +575,86 @@ const CC = {};
       }
 
       function closeGroup() {
+        const wasOpen = document
+          .getElementById("group-dialog")
+          .classList.contains("show");
         document.getElementById("group-mask").classList.remove("show");
         document.getElementById("group-dialog").classList.remove("show");
+        if (giscusTimeout) {
+          clearTimeout(giscusTimeout);
+          giscusTimeout = null;
+        }
+        trapFocus(false);
+        if (wasOpen && groupLastFocus && groupLastFocus.focus) {
+          groupLastFocus.focus();
+        }
       }
+
+      document.getElementById("search").addEventListener("input", function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(
+          function () {
+            doSearch(document.getElementById("search").value);
+          },
+          180,
+        );
+      });
+      document.getElementById("group-btn").addEventListener("click", openGroup);
+      document.getElementById("about-btn").addEventListener("click", openAbout);
+      document.getElementById("about-mask").addEventListener("click", closeAbout);
+      document
+        .querySelector("#about-dialog .about-close")
+        .addEventListener("click", closeAbout);
+      document.getElementById("group-mask").addEventListener("click", closeGroup);
+      document
+        .querySelector("#group-dialog .group-close")
+        .addEventListener("click", closeGroup);
+      document
+        .querySelector("#detail .close-btn")
+        .addEventListener("click", closeDetail);
+      document
+        .querySelector(".scroll-btn.left")
+        .addEventListener("click", function () {
+          scrollColsPage(-1);
+        });
+      document
+        .querySelector(".scroll-btn.right")
+        .addEventListener("click", function () {
+          scrollColsPage(1);
+        });
+      document.getElementById("search").addEventListener("keydown", function (e) {
+        const box = document.getElementById("search-results");
+        if (box.style.display === "none" || !box.style.display) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setActiveOption(srActive + 1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setActiveOption(srActive - 1);
+        } else if (e.key === "Enter") {
+          if (srActive >= 0) {
+            e.preventDefault();
+            pickSearch(srActive);
+          }
+        } else if (e.key === "Escape") {
+          clearActiveOption();
+        }
+      });
+      document
+        .getElementById("search-results")
+        .addEventListener("click", function (e) {
+          const item = e.target.closest(".sr-item");
+          if (!item) return;
+          const idx = parseInt(item.dataset.idx, 10);
+          if (!isNaN(idx)) pickSearch(idx);
+        });
+
       document.addEventListener("click", function (e) {
         if (
           !e.target.closest(".node") &&
           !e.target.closest("#detail") &&
-          !e.target.closest("#search")
+          !e.target.closest("#search") &&
+          !e.target.closest("#search-results")
         ) {
           closeDetail();
         }
@@ -480,6 +672,8 @@ const CC = {};
         }
         if (!e.target.closest("#search-results") && !e.target.closest("#search")) {
           document.getElementById("search-results").style.display = "none";
+          document.getElementById("search").setAttribute("aria-expanded", "false");
+          clearActiveOption();
         }
       });
 
@@ -489,9 +683,12 @@ const CC = {};
           closeAbout();
           closeGroup();
           document.getElementById("search-results").style.display = "none";
+          document.getElementById("search").setAttribute("aria-expanded", "false");
+          clearActiveOption();
         }
-        if (e.key === "ArrowLeft") scrollCols(-300);
-        if (e.key === "ArrowRight") scrollCols(300);
+        if (e.target && e.target.id === "search") return;
+        if (e.key === "ArrowLeft") scrollColsPage(-1);
+        if (e.key === "ArrowRight") scrollColsPage(1);
       });
 
       let touchStartY = 0;
@@ -504,7 +701,7 @@ const CC = {};
         .getElementById("detail")
         .addEventListener("touchmove", function (e) {
           const dy = e.touches[0].clientY - touchStartY;
-          if (dy > 60 && this.scrollTop <= 0) {
+          if (dy > 60 && e.currentTarget.scrollTop <= 0) {
             closeDetail();
           }
         });

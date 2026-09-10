@@ -7,66 +7,63 @@
       content="width=device-width,initial-scale=1.0,user-scalable=yes"
     />
     <title>神秘电子音乐体系</title>
+    <meta
+      name="description"
+      content="神秘电子音乐体系 —— 电子音乐风格/标签互动图谱，16 篇章、上千个曲风节点，点击任意节点查看详细介绍。"
+    />
+    <meta property="og:title" content="神秘电子音乐体系" />
+    <meta
+      property="og:description"
+      content="电子音乐风格/标签互动图谱，16 篇章、上千个曲风节点，点击任意节点查看详细介绍。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://genre.yeisu.cn/" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤔</text></svg>"
+      href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%A4%94%3C%2Ftext%3E%3C%2Fsvg%3E"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="topbar">
+    <header id="topbar">
       <input
         type="text"
         id="search"
         placeholder="搜索曲风..."
-        oninput="doSearch(this.value)"
+        aria-label="搜索曲风"
         autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="search-results"
+        aria-expanded="false"
       />
       <span class="ch-count" id="ch-count"></span>
-      <button id="group-btn" onclick="openGroup()">讨论区</button>
-      <button id="about-btn" onclick="openAbout()">关于本站</button>
-      <div id="search-results" style="display: none"></div>
-    </div>
-    <button class="scroll-btn left" onclick="scrollCols(-400)" title="向左滚动">
-      ←
-    </button>
-    <button class="scroll-btn right" onclick="scrollCols(400)" title="向右滚动">
-      →
-    </button>
-    <div
-      id="swipe-hint"
-      style="
-        display: none;
-        position: fixed;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 20;
-        background: #1e293bee;
-        backdrop-filter: blur(8px);
-        color: #94a3b8;
-        font-size: 11px;
-        padding: 6px 16px;
-        border-radius: 20px;
-        border: 1px solid #334155;
-        pointer-events: none;
-        transition: opacity 0.5s;
-      "
-    >
-      左右滑动浏览篇章
-    </div>
-    <div id="wrapper">
+      <button id="group-btn">讨论区</button>
+      <button id="about-btn">关于本站</button>
+      <div id="search-results" role="listbox" aria-label="搜索结果"></div>
+    </header>
+    <button class="scroll-btn left" title="向左滚动" aria-label="向左滚动">←</button>
+    <button class="scroll-btn right" title="向右滚动" aria-label="向右滚动">→</button>
+    <div class="swipe-hint" id="swipe-hint">左右滑动浏览篇章</div>
+    <main id="wrapper">
       <div id="dim"></div>
       <div id="container"></div>
-      <div id="detail">
-        <button class="close-btn" onclick="closeDetail()">×</button>
-        <div id="detail-inner"></div>
-      </div>
+    </main>
+
+    <div
+      id="detail"
+      role="dialog"
+      aria-labelledby="detail-title"
+      aria-label="曲风介绍"
+      tabindex="-1"
+    >
+      <button class="close-btn">×</button>
+      <div id="detail-inner"></div>
     </div>
 
-    <div id="about-mask" onclick="closeAbout()"></div>
-    <div id="about-dialog" role="dialog" aria-modal="true" aria-label="关于本站">
-      <button class="about-close" onclick="closeAbout()">×</button>
+    <div id="about-mask"></div>
+    <div id="about-dialog" role="dialog" aria-modal="true" aria-label="关于本站" tabindex="-1">
+      <button class="about-close">×</button>
       <div class="about-title">关于本站</div>
       <div class="about-icon">🤔</div>
       <div class="about-icon-note">（不知道用什么图标）</div>
@@ -91,9 +88,9 @@
       </div>
     </div>
 
-    <div id="group-mask" onclick="closeGroup()"></div>
-    <div id="group-dialog" role="dialog" aria-modal="true" aria-label="讨论区">
-      <button class="group-close" onclick="closeGroup()">×</button>
+    <div id="group-mask"></div>
+    <div id="group-dialog" role="dialog" aria-modal="true" aria-label="讨论区" tabindex="-1">
+      <button class="group-close">×</button>
       <div class="group-head">
         <div class="group-title">讨论区</div>
       </div>
