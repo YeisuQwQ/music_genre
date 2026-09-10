@@ -7,28 +7,30 @@
       content="width=device-width,initial-scale=1.0,user-scalable=yes"
     />
     <title>神秘电子音乐体系</title>
-        <link rel="stylesheet" href="style.css" />
-
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤔</text></svg>"
+    />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="topbar">
       <input
         type="text"
         id="search"
-        placeholder="🔍 搜索曲风..."
+        placeholder="搜索曲风..."
         oninput="doSearch(this.value)"
         autocomplete="off"
       />
-      <button onclick="expandAll()" title="展开所有栏目">📂 全部展开</button>
-      <button onclick="collapseAll()" title="折叠所有栏目">📁 全部折叠</button>
       <span class="ch-count" id="ch-count"></span>
+      <button id="about-btn" onclick="openAbout()">关于本站</button>
       <div id="search-results" style="display: none"></div>
     </div>
     <button class="scroll-btn left" onclick="scrollCols(-400)" title="向左滚动">
-      ◀
+      ←
     </button>
     <button class="scroll-btn right" onclick="scrollCols(400)" title="向右滚动">
-      ▶
+      →
     </button>
     <div
       id="swipe-hint"
@@ -50,53 +52,45 @@
         transition: opacity 0.5s;
       "
     >
-      👈 左右滑动浏览篇章 👉
+      左右滑动浏览篇章
     </div>
     <div id="wrapper">
       <div id="dim"></div>
       <div id="container"></div>
       <div id="detail">
-        <button class="close-btn" onclick="closeDetail()">✕</button>
+        <button class="close-btn" onclick="closeDetail()">×</button>
         <div id="detail-inner"></div>
       </div>
     </div>
 
-    <div
-      id="credit"
-      style="
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 15;
-        background: linear-gradient(180deg, rgba(6, 10, 20, 0.9), rgba(9, 14, 28, 0.95));
-        backdrop-filter: blur(8px);
-        border-top: 1px solid #1e293b;
-        padding: 5px 12px;
-        text-align: center;
-        font-size: 10px;
-        color: #64748b;
-      "
-    >
-      📺 资料来源于
-      <a
-        href="https://www.bilibili.com/video/BV1tusFePEUM/?share_source=copy_web&vd_source=4a668a5ff37aa77ec566058febd2633a"
-        target="_blank"
-        rel="noopener"
-        style="color: #60a5fa; text-decoration: none; font-weight: 500"
-        >【全网最全！1000+个电音风格/标签科普介绍视频丨共计6个小时的电音宇宙漫游指南第四期！】</a
-      >
-      如有错误可前往<a
-        href="https://github.com/YeisuQwQ/music_genre/issues"
-        target="_blank"
-        rel="noopener"
-        style="color: #60a5fa; text-decoration: none; font-weight: 500"
-        >Github提交issues</a
-      >或QQ：3069309919
+    <div id="about-mask" onclick="closeAbout()"></div>
+    <div id="about-dialog" role="dialog" aria-modal="true" aria-label="关于本站">
+      <button class="about-close" onclick="closeAbout()">×</button>
+      <div class="about-title">关于本站</div>
+      <div class="about-icon">🤔</div>
+      <div class="about-icon-note">（不知道用什么图标）</div>
+      <div class="about-credit">
+        <div>· 资料来源于
+          <a
+            href="https://www.bilibili.com/video/BV1tusFePEUM/?share_source=copy_web&vd_source=4a668a5ff37aa77ec566058febd2633a"
+            target="_blank"
+            rel="noopener"
+            >【全网最全！1000+个电音风格/标签科普介绍视频丨共计6个小时的电音宇宙漫游指南第四期！】</a
+          ></div
+        >
+        <div class="credit-line">· 如有错误可前往
+          <a
+            href="https://github.com/YeisuQwQ/music_genre/issues"
+            target="_blank"
+            rel="noopener"
+            >Github提交issues</a
+          >
+          或QQ：3069309919</div
+        >
+      </div>
     </div>
 
-        <script src="data.js" defer></script>
+    <script src="data.js" defer></script>
     <script src="app.js" defer></script>
-
   </body>
 </html>

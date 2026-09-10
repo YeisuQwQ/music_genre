@@ -155,10 +155,18 @@
         color: #64748b;
         text-align: center;
       }
+      .sr-divider {
+        padding: 6px 10px 4px;
+        font-size: 10px;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        border-top: 1px solid #33415566;
+        margin-top: 4px;
+      }
       #wrapper {
         display: flex;
-        height: calc(100vh - 48px - 26px);
-        height: calc(100dvh - 48px - 26px);
+        height: calc(100vh - 48px);
+        height: calc(100dvh - 48px);
         overflow: hidden;
       }
       #container {
@@ -367,7 +375,7 @@
       }
       #detail {
         position: fixed;
-        bottom: 26px;
+        bottom: 0;
         left: 0;
         right: 0;
         z-index: 30;
@@ -493,9 +501,102 @@
         margin-top: 4px;
         font-style: italic;
       }
-      #credit a:hover {
-        color: #93c5fd !important;
-        text-decoration: underline !important;
+      #about-btn {
+        margin-left: auto;
+      }
+      #about-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(2, 6, 18, 0.55);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      #about-mask.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #about-dialog {
+        position: fixed;
+        z-index: 51;
+        top: 50%;
+        left: 50%;
+        width: min(440px, calc(100vw - 48px));
+        transform: translate(-50%, -46%) scale(0.96);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(9, 14, 28, 0.98));
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        color: #cbd5e1;
+      }
+      #about-dialog.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      #about-dialog .about-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        line-height: 1;
+      }
+      #about-dialog .about-close:hover {
+        color: #fff;
+      }
+      #about-dialog .about-title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      #about-dialog .about-icon {
+        text-align: center;
+        font-size: 56px;
+        line-height: 1;
+        margin: 10px 0 6px;
+      }
+      #about-dialog .about-icon-note {
+        text-align: center;
+        font-size: 11px;
+        color: #64748b;
+        margin-bottom: 14px;
+      }
+      #about-dialog .about-credit {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid #1e293b;
+        font-size: 11px;
+        line-height: 1.85;
+        color: #94a3b8;
+      }
+      #about-dialog .about-credit .credit-line {
+        margin-top: 4px;
+      }
+      #about-dialog a {
+        color: #60a5fa;
+        text-decoration: none;
+      }
+      #about-dialog a:hover {
+        color: #93c5fd;
+        text-decoration: underline;
       }
       @media (min-width: 769px) {
         .col {
@@ -510,7 +611,7 @@
           width: 420px;
           right: 0;
           top: 0;
-          bottom: 26px;
+          bottom: 0;
           max-height: 100vh;
           border-radius: 0;
           border-left: none;
@@ -558,7 +659,7 @@
           padding: 4px 7px;
         }
         #wrapper {
-          height: calc(100dvh - 42px - 22px);
+          height: calc(100dvh - 42px);
         }
         #container {
           padding: 6px;
@@ -680,8 +781,7 @@
           margin-right: 4px;
         }
       }
-      #topbar,
-      #credit {
+      #topbar {
         opacity: 0;
         transition: opacity 0.45s ease;
       }
@@ -689,7 +789,6 @@
         opacity: 0;
       }
       body.in #topbar,
-      body.in #credit,
       body.in .scroll-btn {
         opacity: 1;
       }
@@ -707,7 +806,6 @@
       }
       @media (prefers-reduced-motion: reduce) {
         #topbar,
-        #credit,
         .scroll-btn,
         #dim {
           transition: none !important;

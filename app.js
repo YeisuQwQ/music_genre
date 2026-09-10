@@ -115,7 +115,6 @@ const CC = {};
         }
       });
 
-      // entrance animation: reveal after the first paint
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           container.classList.add("in");
@@ -169,21 +168,21 @@ const CC = {};
           return;
         }
 
-        if (g.aka) h += '<div class="aka">🏷 A.K.A. ' + g.aka + "</div>";
+        if (g.aka) h += '<div class="aka">A.K.A. ' + g.aka + "</div>";
         h += '<div class="desc">' + g.desc + "</div>";
 
         if (g.ups.length || g.downs.length || g.related) {
           h += '<div class="rels">';
           if (g.ups.length) {
             h +=
-              '<div class="rel-title" style="color:#f87171">⬆ 上位（影响/衍生来源）</div>';
+              '<div class="rel-title" style="color:#f87171">上位（影响/衍生来源）</div>';
             g.ups.forEach(
               (u) => (h += '<span class="tag up">' + u + "</span>"),
             );
           }
           if (g.downs.length) {
             h +=
-              '<div class="rel-title" style="color:#4ade80;margin-top:6px">⬇ 下位（派生子风格）</div>';
+              '<div class="rel-title" style="color:#4ade80;margin-top:6px">下位（派生子风格）</div>';
             g.downs.forEach(
               (d) => (h += '<span class="tag down">' + d + "</span>"),
             );
@@ -197,7 +196,7 @@ const CC = {};
         }
 
         if (g.examples && g.examples.length) {
-          h += '<div class="ex-title">🎵 例曲</div>';
+          h += '<div class="ex-title">例曲</div>';
           g.examples.forEach(
             (ex) => (h += '<div class="ex-item">' + ex + "</div>"),
           );
@@ -217,6 +216,75 @@ const CC = {};
 
       let searchMatches = [];
 
+      function normClean(s) {
+        const keep = [];
+        const map = [];
+        for (let i = 0; i < s.length; i++) {
+          const c = s[i].toLowerCase();
+          if (/[\s\-_（）()\[\]【】·,，.、/\\"'']/.test(c)) continue;
+          keep.push(c);
+          map.push(i);
+        }
+        return { clean: keep.join(""), map };
+      }
+
+      function editDist(a, b) {
+        let prev = new Array(b.length + 1);
+        for (let j = 0; j <= b.length; j++) prev[j] = j;
+        for (let i = 1; i <= a.length; i++) {
+          const cur = [i];
+          for (let j = 1; j <= b.length; j++) {
+            cur[j] = Math.min(
+              prev[j] + 1,
+              cur[j - 1] + 1,
+              prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+            );
+          }
+          prev = cur;
+        }
+        return prev[b.length];
+      }
+
+      function fuzzySearch(q, name) {
+        const qn = q.clean;
+        const nn = name.clean;
+        if (!qn || !nn) return null;
+        if (nn.includes(qn)) {
+          const idx = nn.indexOf(qn);
+          return { score: 100 - idx * 0.5, start: idx, len: qn.length, type: "contains" };
+        }
+        if (qn.length < 2) return null;
+        const thr = qn.length <= 3 ? 1 : Math.min(2, Math.floor(qn.length / 3));
+        let best = { d: 99, start: -1, L: qn.length };
+        for (let L = qn.length; L <= qn.length + 1; L++) {
+          for (let s = 0; s + L <= nn.length; s++) {
+            const d = editDist(qn, nn.slice(s, s + L));
+            if (d < best.d) best = { d, start: s, L };
+          }
+        }
+        if (best.d <= thr && best.start >= 0) {
+          return { score: 70 - best.d * 8, start: best.start, len: best.L, type: "fuzzy" };
+        }
+        let p = 0;
+        const matched = [];
+        for (let i = 0; i < nn.length && p < qn.length; i++) {
+          if (nn[i] === qn[p]) {
+            matched.push(i);
+            p++;
+          }
+        }
+        if (p === qn.length) {
+          return {
+            score: 50 - (nn.length - qn.length) * 0.3,
+            start: matched[0],
+            len: matched.length,
+            matched,
+            type: "subseq",
+          };
+        }
+        return null;
+      }
+
       function doSearch(q) {
         q = q.toLowerCase().trim();
         document
@@ -228,44 +296,62 @@ const CC = {};
           box.innerHTML = "";
           return;
         }
+        const qc = normClean(q);
         searchMatches = [];
+        const scored = [];
         for (let el of allNodes) {
-          if (el.dataset.name.toLowerCase().includes(q)) {
-            searchMatches.push(el);
-          }
+          const name = el.dataset.name;
+          const nc = normClean(name);
+          const r = fuzzySearch(qc, nc);
+          if (r) scored.push({ el, r, nc });
         }
-        if (!searchMatches.length) {
+        scored.sort((a, b) => b.r.score - a.r.score || a.r.start - b.r.start);
+        if (!scored.length) {
           box.style.display = "block";
           box.innerHTML =
             '<div class="sr-empty">没有找到与「' + q + '」相关的曲风</div>';
           return;
         }
-        const cap = 40;
-        let h = "";
-        searchMatches.slice(0, cap).forEach((el, i) => {
+        const exact = scored.filter((x) => x.r.type === "contains").slice(0, 40);
+        const fuzzy = scored.filter((x) => x.r.type !== "contains").slice(0, 20);
+        searchMatches = exact.concat(fuzzy).map((x) => x.el);
+        function itemHtml({ el, r, nc }, i) {
           const name = el.dataset.name;
-          const idx = name.toLowerCase().indexOf(q);
-          const hl =
-            idx >= 0
-              ? name.slice(0, idx) +
-                "<mark>" +
-                name.slice(idx, idx + q.length) +
-                "</mark>" +
-                name.slice(idx + q.length)
-              : name;
-          h +=
+          const ori = [];
+          if (r.type === "contains") {
+            for (let k = r.start; k < r.start + r.len; k++) ori.push(nc.map[k]);
+          } else if (r.type === "fuzzy") {
+            for (let k = r.start; k < r.start + r.len; k++) {
+              if (nc.map[k] !== undefined) ori.push(nc.map[k]);
+            }
+          } else {
+            r.matched.forEach((k) => ori.push(nc.map[k]));
+          }
+          const oriSet = new Set(ori);
+          let hl = "";
+          for (let k = 0; k < name.length; k++) {
+            hl += oriSet.has(k) ? "<mark>" + name[k] + "</mark>" : name[k];
+          }
+          return (
             '<div class="sr-item" onclick="event.stopPropagation();pickSearch(' +
             i +
             ')"><span class="sr-name">' +
             hl +
             '</span><span class="sr-chap">' +
             el.dataset.chapter +
-            "</span></div>";
-        });
-        if (searchMatches.length > cap) {
+            "</span></div>"
+          );
+        }
+        let h = "";
+        exact.forEach((x, i) => (h += itemHtml(x, i)));
+        if (exact.length && fuzzy.length) {
+          h += '<div class="sr-divider">猜你想搜</div>';
+        }
+        fuzzy.forEach((x, i) => (h += itemHtml(x, exact.length + i)));
+        if (searchMatches.length < scored.length) {
           h +=
             '<div class="sr-empty">… 还有 ' +
-            (searchMatches.length - cap) +
+            (scored.length - searchMatches.length) +
             " 个结果,继续输入以缩小范围</div>";
         }
         box.innerHTML = h;
@@ -297,16 +383,14 @@ const CC = {};
       }
 
 
-      function expandAll() {
-        document
-          .querySelectorAll(".col-body")
-          .forEach((b) => (b.style.display = ""));
+      function openAbout() {
+        document.getElementById("about-mask").classList.add("show");
+        document.getElementById("about-dialog").classList.add("show");
       }
 
-      function collapseAll() {
-        document
-          .querySelectorAll(".col-body")
-          .forEach((b) => (b.style.display = "none"));
+      function closeAbout() {
+        document.getElementById("about-mask").classList.remove("show");
+        document.getElementById("about-dialog").classList.remove("show");
       }
 
       document.addEventListener("click", function (e) {
@@ -317,6 +401,12 @@ const CC = {};
         ) {
           closeDetail();
         }
+        if (
+          !e.target.closest("#about-dialog") &&
+          !e.target.closest("#about-btn")
+        ) {
+          closeAbout();
+        }
         if (!e.target.closest("#search-results") && !e.target.closest("#search")) {
           document.getElementById("search-results").style.display = "none";
         }
@@ -325,6 +415,7 @@ const CC = {};
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
           closeDetail();
+          closeAbout();
           document.getElementById("search-results").style.display = "none";
         }
         if (e.key === "ArrowLeft") scrollCols(-300);
@@ -346,7 +437,6 @@ const CC = {};
           }
         });
 
-      // Mobile swipe hint
       (function () {
         var hint = document.getElementById("swipe-hint");
         var container = document.getElementById("container");
