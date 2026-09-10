@@ -387,6 +387,11 @@
         transform: translateY(0);
         pointer-events: auto;
       }
+      #detail .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+      }
       #detail h2 {
         font-size: 18px;
         color: #60a5fa;
@@ -751,12 +756,6 @@
         #detail.show {
           opacity: 1;
           transform: translateX(0);
-        }
-        #detail .close-btn {
-          position: absolute;
-          top: 12px;
-          right: 14px;
-          float: none;
         }
       }
       @media (max-width: 768px) {
