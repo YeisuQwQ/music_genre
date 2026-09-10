@@ -393,6 +393,71 @@ const CC = {};
         document.getElementById("about-dialog").classList.remove("show");
       }
 
+      let giscusLoaded = false;
+      let giscusReady = false;
+      let giscusTimeout = null;
+      function hideGroupLoading() {
+        giscusReady = true;
+        const ld = document.getElementById("group-loading");
+        if (ld) ld.style.display = "none";
+        if (giscusTimeout) {
+          clearTimeout(giscusTimeout);
+          giscusTimeout = null;
+        }
+      }
+      function showGroupLoading() {
+        const ld = document.getElementById("group-loading");
+        if (ld && !giscusReady) ld.style.display = "flex";
+      }
+      document.addEventListener(
+        "load",
+        function (e) {
+          if (
+            e.target &&
+            e.target.tagName === "IFRAME" &&
+            /giscus\.app/.test(e.target.src || "")
+          ) {
+            hideGroupLoading();
+          }
+        },
+        true,
+      );
+      window.addEventListener("message", function (e) {
+        if (e.data && e.data.giscus) hideGroupLoading();
+      });
+      function openGroup() {
+        document.getElementById("group-mask").classList.add("show");
+        document.getElementById("group-dialog").classList.add("show");
+        showGroupLoading();
+        if (!giscusTimeout) giscusTimeout = setTimeout(hideGroupLoading, 15000);
+        if (!giscusLoaded) {
+          giscusLoaded = true;
+          const s = document.createElement("script");
+          s.src = "https://giscus.app/client.js";
+          s.crossOrigin = "anonymous";
+          s.async = true;
+          const attrs = {
+            repo: "YeisuQwQ/music_genre",
+            "repo-id": "R_kgDOTTgEmg",
+            category: "General",
+            "category-id": "DIC_kwDOTTgEms4DFSnO",
+            mapping: "pathname",
+            strict: "0",
+            "reactions-enabled": "0",
+            "emit-metadata": "0",
+            "input-position": "top",
+            theme: "dark",
+            lang: "zh-CN",
+          };
+          for (const k in attrs) s.setAttribute("data-" + k, attrs[k]);
+          document.querySelector("#group-dialog .giscus").appendChild(s);
+        }
+      }
+
+      function closeGroup() {
+        document.getElementById("group-mask").classList.remove("show");
+        document.getElementById("group-dialog").classList.remove("show");
+      }
       document.addEventListener("click", function (e) {
         if (
           !e.target.closest(".node") &&
@@ -407,6 +472,12 @@ const CC = {};
         ) {
           closeAbout();
         }
+        if (
+          !e.target.closest("#group-dialog") &&
+          !e.target.closest("#group-btn")
+        ) {
+          closeGroup();
+        }
         if (!e.target.closest("#search-results") && !e.target.closest("#search")) {
           document.getElementById("search-results").style.display = "none";
         }
@@ -416,6 +487,7 @@ const CC = {};
         if (e.key === "Escape") {
           closeDetail();
           closeAbout();
+          closeGroup();
           document.getElementById("search-results").style.display = "none";
         }
         if (e.key === "ArrowLeft") scrollCols(-300);

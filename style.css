@@ -501,8 +501,26 @@
         margin-top: 4px;
         font-style: italic;
       }
-      #about-btn {
+      #topbar #group-btn {
         margin-left: auto;
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      #topbar #group-btn:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+      }
+      #topbar #about-btn {
+        background: #7c3aed;
+        border-color: #7c3aed;
+        color: #fff;
+      }
+      #topbar #about-btn:hover {
+        background: #8b5cf6;
+        border-color: #8b5cf6;
+        color: #fff;
       }
       #about-mask {
         position: fixed;
@@ -597,6 +615,121 @@
       #about-dialog a:hover {
         color: #93c5fd;
         text-decoration: underline;
+      }
+      #group-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        background: rgba(2, 6, 18, 0.55);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      #group-mask.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #group-dialog {
+        position: fixed;
+        z-index: 56;
+        top: 50%;
+        left: 50%;
+        width: min(760px, calc(100vw - 40px));
+        height: min(82vh, 720px);
+        height: min(82dvh, 720px);
+        transform: translate(-50%, -46%) scale(0.96);
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(9, 14, 28, 0.98));
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 16px 18px 18px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        color: #cbd5e1;
+      }
+      #group-dialog.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      #group-dialog .group-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        line-height: 1;
+        z-index: 5;
+      }
+      #group-dialog .group-close:hover {
+        color: #fff;
+      }
+      #group-dialog .group-title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding-right: 30px;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      #group-dialog .group-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      #group-dialog .group-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 2px;
+        scrollbar-width: thin;
+        scrollbar-color: #334155 transparent;
+      }
+      #group-dialog .group-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 48px 0;
+        color: #94a3b8;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+      }
+      #group-dialog .group-spinner {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 3px solid #334155;
+        border-top-color: #60a5fa;
+        animation: group-spin 0.8s linear infinite;
+      }
+      @keyframes group-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #group-dialog .giscus {
+        width: 100%;
+      }
+      @media (max-width: 480px) {
+        #group-dialog {
+          width: calc(100vw - 24px);
+          height: min(84dvh, 720px);
+          padding: 14px 14px 16px;
+        }
       }
       @media (min-width: 769px) {
         .col {

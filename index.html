@@ -23,6 +23,7 @@
         autocomplete="off"
       />
       <span class="ch-count" id="ch-count"></span>
+      <button id="group-btn" onclick="openGroup()">讨论区</button>
       <button id="about-btn" onclick="openAbout()">关于本站</button>
       <div id="search-results" style="display: none"></div>
     </div>
@@ -87,6 +88,21 @@
           >
           或QQ：3069309919</div
         >
+      </div>
+    </div>
+
+    <div id="group-mask" onclick="closeGroup()"></div>
+    <div id="group-dialog" role="dialog" aria-modal="true" aria-label="讨论区">
+      <button class="group-close" onclick="closeGroup()">×</button>
+      <div class="group-head">
+        <div class="group-title">讨论区</div>
+      </div>
+      <div class="group-body">
+        <div class="group-loading" id="group-loading">
+          <div class="group-spinner"></div>
+          <span>加载中</span>
+        </div>
+        <div class="giscus"></div>
       </div>
     </div>
 
