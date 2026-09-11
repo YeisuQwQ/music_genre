@@ -27,6 +27,13 @@ if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
         if (!NORM_KEYS.has(n)) NORM_KEYS.set(n, []);
         NORM_KEYS.get(n).push(k);
       });
+      // 数据里的字面 <br> 是作者手写的换行标记：分段各自转义，仅 <br> 还原成真实换行（保持 XSS 安全）
+      function escBr(s) {
+        return String(s)
+          .split(/<br\s*\/?>/i)
+          .map(esc)
+          .join("<br>");
+      }
       function esc(s) {
         return String(s).replace(/[&<>"']/g, function (c) {
           return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c;
@@ -182,7 +189,7 @@ if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
         }
 
         if (g.aka) h += '<div class="aka">A.K.A. ' + esc(g.aka) + "</div>";
-        h += '<div class="desc">' + esc(g.desc) + "</div>";
+        h += '<div class="desc">' + escBr(g.desc) + "</div>";
 
         if (g.ups.length || g.downs.length || g.related) {
           h += '<div class="rels">';
@@ -211,7 +218,7 @@ if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
         if (g.examples && g.examples.length) {
           h += '<div class="ex-title">例曲</div>';
           g.examples.forEach(
-            (ex) => (h += '<div class="ex-item">' + esc(ex) + "</div>"),
+            (ex) => (h += '<div class="ex-item">' + escBr(ex) + "</div>"),
           );
         }
 
@@ -645,6 +652,10 @@ if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
         .addEventListener("click", function (e) {
           const item = e.target.closest(".sr-item");
           if (!item) return;
+          // 关键：pickSearch 会立刻清空下拉（目标节点脱离 DOM），
+          // 若不阻止冒泡，同一 click 到达 document 时 closest() 全为 null，
+          // 会被当成「点到外面」而瞬间关闭刚打开的面板。
+          e.stopPropagation();
           const idx = parseInt(item.dataset.idx, 10);
           if (!isNaN(idx)) pickSearch(idx);
         });
