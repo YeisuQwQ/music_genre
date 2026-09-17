@@ -1,0 +1,6 @@
+# Robots.txt - 允许所有搜索引擎爬取网站
+User-agent: *
+Disallow: /
+
+# 允许访问所有页面和文件
+Sitemap: https://genre.yeisu.cn/sitemap.xml
