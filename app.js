@@ -588,13 +588,12 @@
   function isSheet() {
     return window.matchMedia("(max-width: 700px)").matches;
   }
-  var MOBILE_UA_RE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i;
+  // 严格复刻你网易云大跌幽默的UA判断机制
+  var MOBILE_UA_RE = /mobile|mobi|wap|iphone|android|ipad/i;
   function isMobileUA() {
     if (typeof navigator === "undefined") return false;
     var ua = navigator.userAgent || "";
-    if (MOBILE_UA_RE.test(ua)) return true;
-    if (navigator.maxTouchPoints > 1 && /Mac/.test(ua)) return true;
-    return false;
+    return MOBILE_UA_RE.test(ua);
   }
   function selectRow(row) {
     if (currentRow && currentRow !== row) currentRow.classList.remove("sel");
