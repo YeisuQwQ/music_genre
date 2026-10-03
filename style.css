@@ -1930,6 +1930,12 @@ mark {
   #quickbar::-webkit-scrollbar {
     display: none;
   }
+  #quickbar > .qb-item:first-child {
+    margin-left: 12px;
+  }
+  #quickbar > .qb-item:last-child {
+    margin-right: 12px;
+  }
 
   .qb-item {
     display: flex;
@@ -2169,7 +2175,6 @@ mark {
   .row {
     padding: 9px 12px;
   }
-  .r-lead,
   .r-open {
     display: none;
   }
@@ -2246,14 +2251,38 @@ mark {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
+  .dlg-title {
+    font-size: 18px;
+  }
+
   .about-row {
     grid-template-columns: 1fr;
     gap: 4px;
+    padding: 10px 0;
   }
+  .about-row dd {
+    font-size: 12.5px;
+  }
+  .about-keys {
+    margin-top: 14px;
+  }
+  .krow {
+    font-size: 12px;
+    padding: 3px 0;
+  }
+
   .dlg {
-    width: calc(100vw - 20px);
-    padding: 22px 16px 24px;
-    max-height: 88vh;
+    width: calc(100vw - 32px);
+    max-width: 420px;
+    padding: 20px 16px 22px;
+    max-height: 78vh;
+  }
+  .dlg-wide {
+    max-width: 460px;
+  }
+  .group-body {
+    margin-top: 12px;
+    max-height: calc(78vh - 130px);
   }
 
   .row,

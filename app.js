@@ -319,27 +319,7 @@
     "</div>" +
     "</section>";
 
-  var colophonHtml =
-    '<footer class="colophon">' +
-    '<dl class="colo-rows">' +
-    "<div class=\"colo-row\"><dt>篇章</dt><dd>" +
-    chapters.length +
-    " 个</dd></div>" +
-    "<div class=\"colo-row\"><dt>条目</dt><dd>" +
-    totalNodes +
-    " 条</dd></div>" +
-    "<div class=\"colo-row\"><dt>介绍</dt><dd>" +
-    totalDesc +
-    " 篇</dd></div>" +
-    "<div class=\"colo-row\"><dt>例曲</dt><dd>" +
-    totalEx +
-    " 首" +
-    (totalNm ? "（" + totalNm + " 首可跳转网易云）" : "") +
-    "</dd></div>" +
-    "<div class=\"colo-row\"><dt>反馈</dt><dd>GitHub Issues · QQ 3069309919</dd></div>" +
-    "</dl>" +
-    '<a class="colo-top" href="#top">回到顶部 ↑</a>' +
-    "</footer>";
+  var colophonHtml = "";
 
   board.innerHTML = mastHtml + chaptersHtml + colophonHtml;
 
@@ -865,7 +845,7 @@
   var searchInput = document.getElementById("search");
   var searchBox = document.getElementById("search-results");
   if (searchInput && window.matchMedia("(max-width: 700px)").matches) {
-    searchInput.setAttribute("placeholder", "搜索曲风 / 别名");
+    searchInput.setAttribute("placeholder", "搜索曲风");
   }
   var searchMatches = [];
   var searchTimer = null;
@@ -956,7 +936,13 @@
   }
   function hideSearch() {
     searchBox.style.display = "none";
+    if (searchInput) searchInput.setAttribute("aria-expanded", "false");
+    clearActiveOption();
+    document.body.classList.remove("searching");
+  }
+  function clearSearch() {
     searchBox.innerHTML = "";
+    searchBox.style.display = "none";
     if (searchInput) searchInput.setAttribute("aria-expanded", "false");
     clearActiveOption();
     document.body.classList.remove("searching");
@@ -965,8 +951,11 @@
   var SEARCH_HINT = '<div class="sr-empty">输入曲风名称、别名或篇章开始搜索</div>';
 
   function enterSearch() {
-    if (!isSheet() || !searchInput) return;
-    document.body.classList.add("searching");
+    if (detailEl && detailEl.classList.contains("show")) closeDetail(true);
+    if (!searchInput) return;
+    if (isSheet()) {
+      document.body.classList.add("searching");
+    }
     if (!searchBox.innerHTML) searchBox.innerHTML = SEARCH_HINT;
     searchBox.style.display = "block";
     searchInput.setAttribute("aria-expanded", "true");
@@ -1099,7 +1088,11 @@
   function pickSearch(i) {
     var row = searchMatches[i];
     if (!row) return;
-    hideSearch();
+    searchBox.style.display = "none";
+    if (searchInput) searchInput.setAttribute("aria-expanded", "false");
+    clearActiveOption();
+    document.body.classList.remove("searching");
+    searchInput.blur();
     openRow(row);
   }
 
@@ -1332,11 +1325,9 @@
 
   document.addEventListener("click", function (e) {
     if (
-      !inPath(e, ".row") &&
-      !inPath(e, ".js-random") &&
       !inPath(e, "#detail") &&
-      !inPath(e, "#masthead") &&
-      !inPath(e, "#toc")
+      !inPath(e, ".row") &&
+      !inPath(e, ".js-random")
     ) {
       closeDetail();
     }
