@@ -3,6 +3,8 @@
 (function () {
   "use strict";
 
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
   var board = document.getElementById("board");
   var tocEl = document.getElementById("toc");
   var tocList = document.getElementById("toc-list");
@@ -203,6 +205,7 @@
         (has ? "1" : "0") +
         '"' +
         (g && g.aka ? ' data-aka="' + esc(g.aka) + '"' : "") +
+        (g && g.related ? ' data-related="' + esc(g.related) + '"' : "") +
         (level > 0 ? ' title="' + esc(n.label) + '"' : "") +
         ">" +
         '<span class="r-mark" aria-hidden="true"></span>' +
@@ -1075,6 +1078,20 @@
           }
         }
       }
+      var rl = row.dataset.related;
+      if (rl) {
+        var rels = splitAka(rl);
+        for (var ri = 0; ri < rels.length; ri++) {
+          var rlc = normClean(rels[ri]);
+          var rr = fuzzySearch(qc, rlc);
+          if (rr && (!r || rr.score > r.score + 4)) {
+            r = rr;
+            nc = rlc;
+            via = "related";
+            aliasHit = rels[ri];
+          }
+        }
+      }
       if (r) scored.push({ row: row, r: r, nc: nc, via: via, alias: aliasHit });
     });
     scored.sort(function (a, b) {
@@ -1108,7 +1125,7 @@
       var r = x.r;
       var nc = x.nc;
       var name = row.dataset.name;
-      var shown = x.via === "aka" ? x.alias || row.dataset.aka : name;
+      var shown = x.via === "aka" || x.via === "related" ? x.alias || (x.via === "aka" ? row.dataset.aka : row.dataset.related) : name;
       var ori = [];
       if (r.type === "contains") {
         for (var k = r.start; k < r.start + r.len; k++) ori.push(nc.map[k]);
@@ -1127,6 +1144,7 @@
         hl += oriSet.has(k4) ? "<mark>" + esc(shown[k4]) + "</mark>" : esc(shown[k4]);
       }
       if (x.via === "aka") hl += '<i class="sr-alias">（' + esc(name) + "）</i>";
+      if (x.via === "related") hl += '<i class="sr-alias">≈ ' + esc(name) + "</i>";
       return (
         '<div class="sr-item' +
         '" role="option" id="sr-opt-' +
