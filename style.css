@@ -427,6 +427,51 @@ mark {
   color: var(--ink-4);
 }
 
+.sr-filters {
+  padding: 8px 12px 4px;
+  border-bottom: 1px solid var(--outline-soft);
+}
+
+.sr-filters-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+
+.sr-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sr-filter {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-full);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sr-filter:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.sr-filter.on {
+  background: var(--primary-tint);
+  border-color: transparent;
+  color: var(--primary-strong);
+  font-weight: 500;
+}
+
 .sr-empty {
   padding: 14px 16px;
   font-size: 13px;

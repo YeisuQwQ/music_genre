@@ -579,16 +579,37 @@
     currentRow = row;
     if (row) row.classList.add("sel");
   }
+  var hashPushed = false;
   function setHash(name) {
     try {
-      history.replaceState(null, "", "#" + encodeURIComponent(name));
+      history.pushState({ detail: name }, "", "#" + encodeURIComponent(name));
+      hashPushed = true;
     } catch (e) {}
   }
   function clearHash() {
-    try {
-      history.replaceState(null, "", location.pathname + location.search);
-    } catch (e) {}
+    if (hashPushed) {
+      hashPushed = false;
+      try {
+        history.back();
+      } catch (e) {}
+    } else {
+      try {
+        history.replaceState(null, "", location.pathname + location.search);
+      } catch (e) {}
+    }
   }
+  window.addEventListener("popstate", function () {
+    if (detailEl.classList.contains("show")) {
+      hashPushed = false;
+      var frames = detailInner.querySelectorAll("iframe");
+      frames.forEach(function (f) { f.src = "about:blank"; f.removeAttribute("src"); });
+      detailInner.querySelectorAll(".ex-player").forEach(function (el) { el.remove(); });
+      detailEl.classList.remove("show");
+      if (dimEl) dimEl.classList.remove("show");
+      document.body.classList.remove("locked");
+      selectRow(null);
+    }
+  });
   function openDetail() {
     detailEl.classList.add("show");
     if (isMobile() && dimEl) {
@@ -602,6 +623,13 @@
       if (!skipHash) clearHash();
       return;
     }
+    var frames = detailInner.querySelectorAll("iframe");
+    frames.forEach(function (f) {
+      var src = f.src;
+      f.src = "about:blank";
+      f.removeAttribute("src");
+    });
+    detailInner.querySelectorAll(".ex-player").forEach(function (el) { el.remove(); });
     detailEl.classList.remove("show");
     if (dimEl) dimEl.classList.remove("show");
     document.body.classList.remove("locked");
@@ -949,6 +977,42 @@
   }
 
   var SEARCH_HINT = '<div class="sr-empty">输入曲风名称、别名或篇章开始搜索</div>';
+  var srFilters = new Set();
+  var srFilterBar = null;
+
+  function buildFilterBar() {
+    var bar = document.createElement('div');
+    bar.className = 'sr-filters';
+    var label = document.createElement('div');
+    label.className = 'sr-filters-label';
+    label.textContent = '筛选篇章';
+    bar.appendChild(label);
+    var list = document.createElement('div');
+    list.className = 'sr-filter-list';
+    list.innerHTML = chapters.map(function (ch, i) {
+      return '<button type="button" class="sr-filter' + (srFilters.has(i) ? ' on' : '') + '" data-ci="' + i + '">' + esc(ch.name) + '</button>';
+    }).join('');
+    bar.appendChild(list);
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('.sr-filter');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      var ci = parseInt(btn.dataset.ci, 10);
+      if (srFilters.has(ci)) {
+        srFilters.delete(ci);
+        btn.classList.remove('on');
+      } else {
+        srFilters.add(ci);
+        btn.classList.add('on');
+      }
+      if (searchInput) {
+        searchInput.focus({ preventScroll: true });
+        doSearch(searchInput.value);
+      }
+    });
+    return bar;
+  }
 
   function enterSearch() {
     if (detailEl && detailEl.classList.contains("show")) closeDetail(true);
@@ -956,7 +1020,11 @@
     if (isSheet()) {
       document.body.classList.add("searching");
     }
-    if (!searchBox.innerHTML) searchBox.innerHTML = SEARCH_HINT;
+    if (!searchInput.value || !searchInput.value.trim()) {
+      searchBox.innerHTML = "";
+      searchBox.appendChild(buildFilterBar());
+      searchBox.insertAdjacentHTML("beforeend", SEARCH_HINT);
+    }
     searchBox.style.display = "block";
     searchInput.setAttribute("aria-expanded", "true");
   }
@@ -969,10 +1037,13 @@
   function doSearch(q) {
     q = q.toLowerCase().trim();
     clearActiveOption();
+    var fb = buildFilterBar();
     if (!q) {
-      if (document.body.classList.contains("searching")) {
+      if (document.body.classList.contains("searching") || searchBox.style.display === "block") {
         searchBox.style.display = "block";
-        searchBox.innerHTML = SEARCH_HINT;
+        searchBox.innerHTML = "";
+        searchBox.appendChild(fb);
+        searchBox.insertAdjacentHTML("beforeend", SEARCH_HINT);
         return;
       }
       hideSearch();
@@ -981,6 +1052,10 @@
     var qc = normClean(q);
     var scored = [];
     allRows.forEach(function (row) {
+      if (srFilters.size > 0) {
+        var ci = CH_I[row.dataset.chapter];
+        if (ci === undefined || !srFilters.has(ci)) return;
+      }
       var nc = normClean(row.dataset.name);
       var r = fuzzySearch(qc, nc);
       var via = "name";
@@ -1006,8 +1081,11 @@
       return b.r.score - a.r.score || a.r.start - b.r.start;
     });
     if (!scored.length) {
+      var fb = buildFilterBar();
       searchBox.style.display = "block";
-      searchBox.innerHTML = '<div class="sr-empty">没有找到与「' + esc(q) + "」相关的曲风</div>";
+      searchBox.innerHTML = "";
+      searchBox.appendChild(fb);
+      searchBox.insertAdjacentHTML("beforeend", '<div class="sr-empty">没有找到与「' + esc(q) + "」相关的曲风</div>");
       searchInput.setAttribute("aria-expanded", "true");
       return;
     }
@@ -1080,7 +1158,9 @@
         (scored.length - searchMatches.length) +
         " 个结果，继续输入以缩小范围</div>";
     }
-    searchBox.innerHTML = h;
+    searchBox.innerHTML = "";
+    searchBox.appendChild(fb);
+    searchBox.insertAdjacentHTML("beforeend", h);
     searchBox.style.display = "block";
     searchInput.setAttribute("aria-expanded", "true");
   }
@@ -1711,22 +1791,6 @@
     }
   });
 
-  var touchStartY = 0;
-  detailEl.addEventListener(
-    "touchstart",
-    function (e) {
-      touchStartY = e.touches[0].clientY;
-    },
-    { passive: true }
-  );
-  detailEl.addEventListener(
-    "touchmove",
-    function (e) {
-      var dy = e.touches[0].clientY - touchStartY;
-      if (dy > 70 && detailInner.scrollTop <= 0) closeDetail();
-    },
-    { passive: true }
-  );
 
   (function openFromHash() {
     var raw = location.hash.slice(1);
@@ -1742,6 +1806,7 @@
     }
     var g = findGenre(name);
     if (g && g.desc) showDetail(g.name || name, g.chapter || "");
+    hashPushed = true;
   })();
 
   updateSpy();
