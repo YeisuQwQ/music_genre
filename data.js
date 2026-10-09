@@ -6424,8 +6424,7 @@ globalThis.DATA = {
       examples: [
         "The Next Generation - BLN & Firelite",
         "Accelerate - Code Black & Atmozfears [偏Emotional例曲]",
-        "2nd Stage：“Euphoric Rawstyle”",
-        "17年来随着Rawphoric的兴起，Rawstyle的Kick模式在Euphoric Hardstyle中成为了主流，一定程度上取代了传统的Euphoric Hardstyle形式，即在原本的Euphoric Hardstyle上换了Rawstyle的底鼓而来的形式。相比Melodic Rawstyle，主题也没那么黑暗，更多保留了Euphoric Hardstyle的特征，可以说仅仅只是Kick模式上的变化。",
+        "Bow Down - Ecstatic & Audiotricz",
       ],
     },
     "raw hardstyle": {
@@ -9550,11 +9549,11 @@ globalThis.DATA = {
       desc: "Botanica是一种新兴电子流派，2022年左右才开始出现，严格意义来讲不是一个“曲风”，甚至只能用听感来区分和形容。“Botanica”用来描述听感的起源是phritz的一个叫做“Botanica”的歌单，里面收录了他个人觉得有“grass type music”气息的歌曲。它结合了以下元素：<br>①Ableton插件特有的“Glitchy”、“有机的”、“ASMR式的”粒子合成式的音色设计；<br>②久石让式的古典乐+Porter Robinson式的能唤起舒适温暖回忆感的流行乐元素；<br>③Bass乐、电影音效设计和Folktronica的当代发展趋势。<br>2021年，Porter Robinson的专辑“Nurture”发布后给大众引入了Petalcore/Electronica/Indie-pop的听感，其中大量的采样和随机的音色拼贴打造成了特立独行的“Nurture风格”。后来大量艺人开始模仿Porter Robinson的实验+流行模板，并开始有人将编曲方面更注重于音色设计。<br><br>2022年，Alexander Panos的专辑“Nascent”发布。策划时间比Nurture要长，并在编曲方面变得更加随机化，加入更多IDM元素。由此也让音乐人们将歌曲主题从单纯的写生转到了写意（这里也是导致了后面Viznode、shameless.等人编曲风格的转变）。<br><br>2023年末时，shameless.在推特上发布一系列类似Alexander Panos写意风格的歌曲片段和音色设计，并配文Botanica，然后就开始推进Botanica进一步向另一个方面发展，并不再局限于phritz的歌单。<br><br>在这个时候Botanica的定义也出现了“广义”和“狭义”的区分，“广义”是指有人在Future Bass里运用Spectral Samples就是Botanica，“狭义”是指大众觉得只有“Viznode/Alexander Panos”的随机采样风格（Petalcore）才是Botanica。<br><br>2024年Botanica热潮爆发，并且许多制作人争相模仿。<br><br>Botanica中使用的技术本身并不新鲜，“植物、自然”相关的美学在音乐中也早已存在。由于Botanica类型的音乐涉及精细的音效设计和高质量的歌曲创作，第一批Botanica曲目的长度大部分都很短，相关大部分音效设计师都只上传5-20秒用于实验的音乐到Soundcloud和Instagram等平台。该流派制作的“挑战性”也鼓励了社区内音乐人的合作和方法交流。<br><br>在个人看来，Botanica一词被滥用的现象并不在少数，甚至大部分人神化了这个单词。现在的Botanica已经99%是Petalcore拼接艺术的成分了。",
       chapter: "Indie",
       examples: [
-        "phritz的Botanica歌单（国内搬运，官方已停更）：https://music.163.com/playlist?id=7642024092&userid=268411320<br>Nurture - Porter Robinson：https://music.163.com/album?id=126338915&userid=268411320<br>Nascent - Alexander Panos：https://music.163.com/album?id=150272382&userid=268411320",
-        "<br>Nurture延申，原声乐器参与类：<br>Look at the sky (phritz cover) - phritz：https://music.163.com/song?id=1998367574&userid=268411320<br>summit - phritz：https://music.163.com/song?id=1979485615&userid=268411320<br>here, in knowing, it will be ok - AT4G：https://music.163.com/song?id=2079940118&userid=268411320<br>rainfall - Oru：https://music.163.com/song?id=2069827052&userid=268411320<br>Picturesque - Charlie / Foxwood：https://music.163.com/song?id=1921129729&userid=268411320<br>As The Wind Passed Through - N33T：https://music.163.com/song?id=1901623793&userid=268411320",
-        "<br>偏拼贴艺术（Petalcore）类：<br>it can all happen at once  - tai hirose：https://music.163.com/song?id=2124820131&userid=268411320<br>dream fractals [vol.2] - aquoferne：https://music.163.com/song?id=2123250231&userid=268411320<br>reverie - AudioKid：https://music.163.com/song?id=1890652849&userid=268411320",
-        "<br>IDM+声音设计类：<br>windflower - shameless. / Viznode：https://music.163.com/song?id=2121831334&userid=268411320【https://www.youtube.com/watch?v=XvCmiZgajv4】<br>hyacinth - shameless. - https://music.163.com/song?id=2065104456&userid=268411320",
-        "<br>融合类：<br>mist - ftrygry：https://music.163.com/song?id=2151646205&userid=268411320<br>ethertail - Arkenesis / Clayekea / achorda / dearest alyx / wtrclr：https://music.163.com/song?id=2048818822&userid=268411320<br>crinum lily - Inu：https://music.163.com/song?id=2028448440&userid=268411320<br>try! - N33T / dobi：https://music.163.com/song?id=2004585906&userid=268411320",
+        "Look at the sky (phritz cover) - phritz",
+        "here, in knowing, it will be ok - AT4G",
+        "windflower - shameless. / Viznode",
+        "mist - ftrygry",
+        "crinum lily - Inu",
       ],
     },
     vaporwave: {
@@ -12007,8 +12006,8 @@ globalThis.DATA = {
       desc: "更受流行文化影响。2000年代出现的电子流行，特点是密集、复杂、分层的制作，通常伴随着模糊而温暖的电气音色/Bass，相比于Synth Pop进一步电气化，也更注重流行音乐的架构，不同程度上借鉴了Electro House等电子舞曲类型、Electroclash以及Synth Pop。尽管起源于地下电子音乐场景，但是很快便获得了主流成功，如流行歌手Kylie Minogue、Britney Spears、Robyn、Lady Gaga、Kanye West等。Electro Pop的流行一直持续到2010年代，并激发了更多EDM风格，与此同时经历了2000年代/2010年代互联网美学的洗礼和Bubblegum Bass的兴起后诞生了Hyper Pop。",
       chapter: "Fusion",
       examples: [
-        "早期：Don't You Want Me - The Human League",
-        "当代：Rise - Katy Perry",
+        "Don't You Want Me - The Human League",
+        "Rise - Katy Perry",
       ],
     },
     "dance-pop": {
