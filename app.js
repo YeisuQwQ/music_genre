@@ -1425,7 +1425,9 @@
     if (
       !inPath(e, "#detail") &&
       !inPath(e, ".row") &&
-      !inPath(e, ".js-random")
+      !inPath(e, ".js-random") &&
+      !inPath(e, "#random-btn") &&
+      !inPath(e, "#mm-random")
     ) {
       closeDetail();
     }
